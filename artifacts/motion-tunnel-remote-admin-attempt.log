@@ -1,0 +1,55 @@
+
+Running 1 test using 1 worker
+
+(node:76784) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 game-tests/event.spec.ts:7:5 › solo phones row, pause, reconnect, rematch; broadcast manual cameras and fullscreen (50.5s)
+
+
+  1) game-tests/event.spec.ts:7:5 › solo phones row, pause, reconnect, rematch; broadcast manual cameras and fullscreen 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: locator('#phase-label')
+    Expected: "RACE IS ON"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" locator('#phase-label') with timeout 5000ms
+      - waiting for locator('#phase-label')
+
+
+      15 |  await h.page.locator('[data-action=pause]').click();await expect(a.page.locator('#phase-label')).toHaveText('RACE PAUSED');await h.page.locator('[data-action=resume]').click();await expect(a.page.locator('#phase-label')).toHaveText('RACE IS ON',{timeout:10000});
+      16 |  await b.context.setOffline(true);await expect(b.page.locator('#connection-banner')).toBeVisible({timeout:10000});await b.context.setOffline(false);await expect(b.page.locator('#connection-banner')).toBeHidden({timeout:18000});
+    > 17 |  await a.page.screenshot({path:'artifacts/motion-phone-race.png'});await h.page.reload();await expect(h.page.locator('#phase-label')).toHaveText('RACE IS ON');await h.page.locator('[data-action=pause]').click();await h.page.locator('[data-action=reset]').click();await expect(a.page.locator('#phase-label')).toHaveText('IN THE LOBBY');expect(errors).toEqual([]);
+         |                                                                                                                                       ^
+      18 |  }finally{await Promise.all([h.context.close(),a.context.close(),b.context.close()]);}
+      19 | });
+      20 | test('admin settings, automatic crew growth, move and remove',async({browser})=>{
+        at /home/sajad-hussain/Desktop/devin/game-tests/event.spec.ts:17:135
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/event-solo-phones-row-paus-13bfa-nual-cameras-and-fullscreen/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/event-solo-phones-row-paus-13bfa-nual-cameras-and-fullscreen/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/event-solo-phones-row-paus-13bfa-nual-cameras-and-fullscreen/test-failed-3.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/event-solo-phones-row-paus-13bfa-nual-cameras-and-fullscreen/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/event-solo-phones-row-paus-13bfa-nual-cameras-and-fullscreen/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/event-solo-phones-row-paus-13bfa-nual-cameras-and-fullscreen/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    game-tests/event.spec.ts:7:5 › solo phones row, pause, reconnect, rematch; broadcast manual cameras and fullscreen 

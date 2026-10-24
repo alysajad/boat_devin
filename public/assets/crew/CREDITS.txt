@@ -1,0 +1,5 @@
+Rower anatomy and rig: MakeHuman Community base mesh and default rig, CC0 1.0.
+Copyright (c) MakeHuman Community; rig weights (c) 2021 Data Collection AB, Joel Palmius, Jonas Hauquier.
+Source: https://github.com/makehumancommunity/makehuman/tree/master/makehuman/data
+Converted, dressed, and posed for Kerala Boat Race by scripts/build-crew.mjs.
+License: https://creativecommons.org/publicdomain/zero/1.0/

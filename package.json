@@ -1,0 +1,60 @@
+{
+  "name": "kerala-boat-race",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Motion-controlled team rowing races with a lightweight phone controller and laptop broadcast.",
+  "license": "MIT",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "node scripts/launch.cjs",
+    "start": "node scripts/launch.cjs --production",
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "test": "jest --runInBand --coverage=false --testPathIgnorePatterns Record.test Room.test guestShareds.test",
+    "test:game": "node --experimental-strip-types --test game-tests/*.test.ts",
+    "test:e2e": "playwright test",
+    "test:upstream": "jest --runInBand --coverage=false",
+    "test:load": "node scripts/load-race.mjs",
+    "build:crew": "node scripts/build-crew.mjs",
+    "build:tree": "node scripts/build-tree.mjs",
+    "build:surfaces": "node scripts/build-surfaces.mjs",
+    "event": "node scripts/launch.cjs --production --event"
+  },
+  "dependencies": {
+    "@deepstream/client": "^5.2.6",
+    "@deepstream/server": "^5.2.6",
+    "@dimforge/rapier2d-compat": "^0.21.0",
+    "@fontsource/bungee": "5.2.7",
+    "@fontsource/noto-sans": "5.2.8",
+    "buffer": "6.0.3",
+    "http-proxy": "^1.18.1",
+    "on-change": "5.0.0",
+    "p5": "1.11.13",
+    "qrcode": "1.5.4",
+    "reefjs": "13.0.2",
+    "three": "0.186.1",
+    "ts-dedent": "^2.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/http-proxy": "^1.17.17",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^24.0.0",
+    "@types/p5": "^1.7.6",
+    "@types/qrcode": "^1.5.5",
+    "@types/reefjs": "^7.6.1",
+    "@types/three": "^0.185.0",
+    "esbuild": "^0.28.2",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.4.2",
+    "@gltf-transform/core": "4.5.1",
+    "@gltf-transform/functions": "4.5.1",
+    "@gltf-transform/extensions": "4.5.1",
+    "meshoptimizer": "1.1.1",
+    "sharp": "0.35.5"
+  }
+}

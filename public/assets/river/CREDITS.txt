@@ -1,0 +1,21 @@
+Photographic surface textures from Poly Haven, licensed CC0 1.0.
+License: https://polyhaven.com/license
+
+wood-color.jpg and wood-normal.jpg:
+Wood Table Worn, photography by Dimitrios Savva, processing by Rico Cilliers.
+https://polyhaven.com/a/wood_table_worn
+Original 1K JPEG diffuse and OpenGL normal maps, unmodified.
+https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_table_worn/wood_table_worn_diff_1k.jpg
+https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_table_worn/wood_table_worn_nor_gl_1k.jpg
+
+shore-color.jpg:
+Brown Mud Leaves 01, Poly Haven.
+https://polyhaven.com/a/brown_mud_leaves_01
+Original 1K JPEG diffuse map, unmodified.
+https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud_leaves_01/brown_mud_leaves_01_diff_1k.jpg
+
+Assets are bundled locally. Playing a race makes no requests to Poly Haven.
+
+KTX2 variants were encoded from these originals with Khronos KTX-Software 4.4.2
+(ETC1S color, UASTC normal, complete mip chains). scripts/build-surfaces.mjs
+is the reproducible conversion command. JPEGs remain as compatibility fallbacks.

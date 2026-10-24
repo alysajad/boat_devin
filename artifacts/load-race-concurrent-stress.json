@@ -1,0 +1,16 @@
+{
+  "durationSeconds": 910,
+  "clients": 52,
+  "players": 50,
+  "boats": 10,
+  "rounds": 13,
+  "accepted": 44233,
+  "snapshots": 17962,
+  "meanSnapshotBytes": 7781,
+  "inputAckP95Ms": 80.16411900008097,
+  "worstWindowStepP95Ms": 7.163889000075869,
+  "errors": [
+    "Unexpected server pause",
+    "Unexpected server pause"
+  ]
+}

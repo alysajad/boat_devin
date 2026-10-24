@@ -1,0 +1,116 @@
+
+Running 13 tests using 1 worker
+
+(node:83195) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 game-tests/display.spec.ts:2:60 › portrait controller: motion granted, swipe fallback, no 3D downloads (9.6s)
+  ✓   2 game-tests/display.spec.ts:2:60 › portrait controller: motion denied, swipe fallback, no 3D downloads (2.3s)
+  ✓   3 game-tests/display.spec.ts:2:60 › portrait controller: motion missing, swipe fallback, no 3D downloads (1.4s)
+  ✘   4 game-tests/event.spec.ts:7:5 › solo phones row, pause, release disconnected seats, rematch; broadcast manual cameras and fullscreen (29.2s)
+(node:83465) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   5 game-tests/event.spec.ts:20:5 › admin settings, automatic crew growth, move and remove (5.2s)
+  ✓   6 game-tests/event.spec.ts:26:5 › capabilities reject cross-room reads, detailed player feeds, state writes and forged events (990ms)
+  ✓   7 game-tests/event.spec.ts:33:5 › broadcast WebGL refusal keeps the room usable (1.2s)
+  ✓   8 game-tests/event.spec.ts:36:5 › a changed server boot ID ends the old session explicitly (3.7s)
+  ✓   9 game-tests/event.spec.ts:38:5 › swipe practice gives feedback, Ready waits for host, refresh removes the old rower (4.0s)
+  ✘  10 game-tests/event.spec.ts:49:5 › calibrated sideways motion practices in the lobby and propels a racing boat (33.6s)
+(node:83859) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  11 game-tests/network.spec.ts:3:5 › host invite refreshes when moving from Wi-Fi to a hotspot, without changing the room (5.6s)
+  ✓  12 game-tests/network.spec.ts:21:5 › HTTPS tunnel origin is used in the QR while admin stays on localhost (1.3s)
+  ✓  13 game-tests/network.spec.ts:27:5 › host can choose direct Wi-Fi swipe QR or trusted local HTTPS (5.6s)
+
+
+  1) game-tests/event.spec.ts:7:5 › solo phones row, pause, release disconnected seats, rematch; broadcast manual cameras and fullscreen 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 2
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      14 |  await h.page.getByRole('button',{name:'Fullscreen',exact:true}).last().click();await expect(h.page.locator('#app')).toHaveClass(/broadcast-fullscreen/);await expect(h.page.locator('#leaderboard')).toBeVisible();await h.page.screenshot({path:'artifacts/motion-broadcast.png'});await h.page.getByRole('button',{name:'Fullscreen',exact:true}).last().click();
+      15 |  await h.page.locator('[data-action=pause]').click();await expect(a.page.locator('#phase-label')).toHaveText('RACE PAUSED');await h.page.locator('[data-action=resume]').click();await expect(a.page.locator('#phase-label')).toHaveText('RACE IS ON',{timeout:10000});
+    > 16 |  await b.context.setOffline(true);await expect(b.page.locator('#connection-banner')).toBeVisible({timeout:10000});await expect.poll(async()=>(await api('room/'+h.code)).players.length).toBe(1);await b.context.setOffline(false);await b.page.reload();await expect(b.page.locator('#nickname')).toBeVisible();await b.page.getByRole('button',{name:'Join the crew'}).click();await expect(b.page.locator('#controller-panel')).toContainText('Your crew joins next round');
+         |                                                                                                                                                                                          ^
+      17 |  await a.page.screenshot({path:'artifacts/motion-phone-race.png'});await h.page.reload();await expect(h.page.locator('#phase-label')).toHaveText('RACE IS ON');await h.page.locator('[data-action=pause]').click();await h.page.locator('[data-action=reset]').click();await expect(a.page.locator('#phase-label')).toHaveText('IN THE LOBBY');expect(errors).toEqual([]);
+      18 |  }finally{await Promise.all([h.context.close(),a.context.close(),b.context.close()]);}
+      19 | });
+        at /home/sajad-hussain/Desktop/devin/game-tests/event.spec.ts:16:186
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../../tmp/rowing-fix-final/event-solo-phones-row-paus-215f3-nual-cameras-and-fullscreen/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../../tmp/rowing-fix-final/event-solo-phones-row-paus-215f3-nual-cameras-and-fullscreen/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../../tmp/rowing-fix-final/event-solo-phones-row-paus-215f3-nual-cameras-and-fullscreen/test-failed-3.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../../../tmp/rowing-fix-final/event-solo-phones-row-paus-215f3-nual-cameras-and-fullscreen/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../tmp/rowing-fix-final/event-solo-phones-row-paus-215f3-nual-cameras-and-fullscreen/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../../../tmp/rowing-fix-final/event-solo-phones-row-paus-215f3-nual-cameras-and-fullscreen/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) game-tests/event.spec.ts:49:5 › calibrated sideways motion practices in the lobby and propels a racing boat 
+
+    Error: expect(locator).not.toContainText(expected) failed
+
+    Locator: locator('#input-feedback')
+    Expected substring: not "Server accepted: 0"
+    Received string: "Server accepted: 0 strokes"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "not toContainText" locator('#input-feedback') with timeout 5000ms
+      - waiting for locator('#input-feedback')
+        14 × locator resolved to <p aria-live="polite" id="input-feedback">Server accepted: 0 strokes</p>
+           - unexpected value "Server accepted: 0 strokes"
+
+
+      56 |   await a.page.evaluate(()=>Object.defineProperty(DeviceMotionEvent,'requestPermission',{value:async()=>'granted',configurable:true}));await a.page.getByRole('button',{name:'Enable motion'}).click();await feed(a.page,true);await feed(a.page,false);await expect(a.page.locator('.motion-instructions')).toContainText('sideways sweep');
+      57 |   await feed(a.page,false);await expect(a.page.locator('#input-feedback')).not.toContainText('Practice strokes: 0');await a.page.locator('[data-action=ready]').click();await h.page.locator('[data-action=start]').click();await expect(a.page.locator('#phase-label')).toHaveText('RACE IS ON',{timeout:12000});
+    > 58 |   await feed(a.page,false);await expect(a.page.locator('#input-feedback')).not.toContainText('Server accepted: 0');await expect(a.page.locator('#race-distance')).not.toHaveText('0 m');
+         |                                                                                ^
+      59 |  }finally{await a?.context.close();await b?.context.close();await h.context.close();}
+      60 | });
+      61 |
+        at /home/sajad-hussain/Desktop/devin/game-tests/event.spec.ts:58:80
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../../tmp/rowing-fix-final/event-calibrated-sideways--e3dea-y-and-propels-a-racing-boat/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../../tmp/rowing-fix-final/event-calibrated-sideways--e3dea-y-and-propels-a-racing-boat/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../../tmp/rowing-fix-final/event-calibrated-sideways--e3dea-y-and-propels-a-racing-boat/test-failed-3.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../../../tmp/rowing-fix-final/event-calibrated-sideways--e3dea-y-and-propels-a-racing-boat/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../../tmp/rowing-fix-final/event-calibrated-sideways--e3dea-y-and-propels-a-racing-boat/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../../../tmp/rowing-fix-final/event-calibrated-sideways--e3dea-y-and-propels-a-racing-boat/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    game-tests/event.spec.ts:7:5 › solo phones row, pause, release disconnected seats, rematch; broadcast manual cameras and fullscreen 
+    game-tests/event.spec.ts:49:5 › calibrated sideways motion practices in the lobby and propels a racing boat 
+  11 passed (1.8m)

@@ -1,0 +1,9 @@
+const { existsSync } = require('node:fs');
+const { resolve } = require('node:path');
+const { spawn } = require('node:child_process');
+const local = resolve('.tools/node_modules/node/bin/node');
+const runtime = existsSync(local) ? local : process.execPath;
+const child = spawn(runtime, ['scripts/run.mjs', ...process.argv.slice(2)], { stdio: 'inherit', env: process.env });
+child.on('exit', code => process.exit(code || 0));
+process.on('SIGINT', () => child.kill('SIGINT'));
+process.on('SIGTERM', () => child.kill('SIGTERM'));

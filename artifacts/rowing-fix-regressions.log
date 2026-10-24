@@ -1,0 +1,12 @@
+
+Running 5 tests using 1 worker
+
+(node:84295) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 game-tests/display.spec.ts:2:60 › portrait controller: motion granted, swipe fallback, no 3D downloads (9.7s)
+  ✓  2 game-tests/display.spec.ts:2:60 › portrait controller: motion denied, swipe fallback, no 3D downloads (2.3s)
+  ✓  3 game-tests/display.spec.ts:2:60 › portrait controller: motion missing, swipe fallback, no 3D downloads (1.4s)
+  ✓  4 game-tests/event.spec.ts:7:5 › solo phones row, pause, release disconnected seats, rematch; broadcast manual cameras and fullscreen (31.0s)
+  ✓  5 game-tests/event.spec.ts:49:5 › calibrated sideways motion practices in the lobby and propels a racing boat (31.8s)
+
+  5 passed (1.3m)

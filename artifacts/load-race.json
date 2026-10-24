@@ -1,0 +1,15 @@
+{
+  "durationSeconds": 911,
+  "clients": 53,
+  "renderedBroadcast": true,
+  "initialAssetBytes": 5503727,
+  "players": 50,
+  "boats": 10,
+  "rounds": 14,
+  "accepted": 48936,
+  "snapshots": 18919,
+  "meanSnapshotBytes": 2342,
+  "inputAckP95Ms": 76.87336399999913,
+  "worstWindowStepP95Ms": 2.342809999943711,
+  "errors": []
+}

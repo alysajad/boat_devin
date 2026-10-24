@@ -1,0 +1,24 @@
+{$SITE_ADDRESS:localhost} {
+  encode gzip zstd
+  @multiplayer path /deepstream /deepstream/* /session
+  handle @multiplayer {
+    reverse_proxy multiplayer:6020
+  }
+  handle /api/race/* {
+    reverse_proxy multiplayer:6120
+  }
+  handle /config.json {
+    header Content-Type application/json
+    header Cache-Control no-store
+    respond `{"websocketPath":"/deepstream"}`
+  }
+  handle /health {
+    respond "ok"
+  }
+  handle {
+    @chunks path /chunks/*
+    header @chunks Cache-Control "public, max-age=31536000, immutable"
+    root * /srv
+    file_server
+  }
+}

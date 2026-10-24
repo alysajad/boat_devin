@@ -1,0 +1,42 @@
+{
+  "transport": "local",
+  "durationSeconds": 72,
+  "clients": 53,
+  "renderedBroadcast": true,
+  "renderSamples": [
+    {
+      "view": "broadcast",
+      "lookYaw": "0",
+      "lookPitch": "0",
+      "motion": "full",
+      "renderer": "3d",
+      "antialias": "true",
+      "quality": "high",
+      "pixelRatio": "1",
+      "collision": "false",
+      "camera": "side",
+      "cameraBoat": "boat-1",
+      "activeChunks": "7",
+      "chunkKeys": "1,2,3,4,5,6,7",
+      "animatedCrew": "12",
+      "renderFrames": "1848",
+      "residentInstances": "2557",
+      "crewAsset": "anatomical-rig",
+      "surfaceAssets": "3",
+      "fps": "60",
+      "drawCalls": "254",
+      "triangles": "809786",
+      "renderCost": "5.01"
+    }
+  ],
+  "initialAssetBytes": 5520569,
+  "players": 50,
+  "boats": 10,
+  "rounds": 2,
+  "accepted": 3198,
+  "snapshots": 1677,
+  "meanSnapshotBytes": 1695,
+  "inputAckP95Ms": 218.25772999999754,
+  "worstWindowStepP95Ms": 3.6642350000038277,
+  "errors": []
+}

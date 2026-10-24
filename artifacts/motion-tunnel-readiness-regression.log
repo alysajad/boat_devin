@@ -1,0 +1,100 @@
+
+Running 1 test using 1 worker
+
+(node:77175) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 game-tests/event.spec.ts:7:5 › solo phones row, pause, reconnect, rematch; broadcast manual cameras and fullscreen (2.0m)
+
+
+  1) game-tests/event.spec.ts:7:5 › solo phones row, pause, reconnect, rematch; broadcast manual cameras and fullscreen 
+
+    Test timeout of 120000ms exceeded.
+
+    Error: locator.click: Test ended.
+    Browser logs:
+
+    <launching> /home/sajad-hussain/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,AvoidCorsURLLoaderRestartOnRedirect,Translate,AutoDeElevate,OptimizationHints,NetworkTimeServiceQuerying,AimEnabled,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --use-angle=gl --user-data-dir=/tmp/playwright_chromiumdev_profile-U6q2Qt --remote-debugging-pipe --no-startup-window
+    <launched> pid=77193
+    [pid=77193][err] [1025/024509.181417:WARNING:components/dbus/xdg/portal.cc:126] Failed to register with org.freedesktop.host.portal.Registry
+    [pid=77193][err] [1025/024509.237337:WARNING:sandbox/policy/linux/sandbox_linux.cc:405] InitializeSandbox() called with multiple threads in process gpu-process.
+    [pid=77193][err] [1025/024509.264985:INFO:CONSOLE:128] "%cparty-log%c %c%s background-color: #88F; color: #00ffff; padding: 2px 5px; border-radius: 2px background: none; font-weight: bold p5.party v0.16.0", source: http://127.0.0.1:8080/app.js (128)
+    [pid=77193][err] [1025/024509.265056:INFO:CONSOLE:128] "%cparty-log background-color: #88F; color: #00ffff; padding: 2px 5px; border-radius: 2px p5.js not found. Use the p5party.* API, e.g. p5party.connect(). (Importing p5 in a bundler? Call p5party.installP5(p5).)", source: http://127.0.0.1:8080/app.js (128)
+    [pid=77193][err] [1025/024509.863858:INFO:CONSOLE:128] "%cparty-log background-color: #88F; color: #00ffff; padding: 2px 5px; border-radius: 2px p5party.loadShared() "race" done!", source: http://127.0.0.1:8080/app.js (128)
+    [pid=77193][err] [1025/024510.015601:INFO:CONSOLE:128] "%cparty-log background-color: #88F; color: #00ffff; padding: 2px 5px; border-radius: 2px p5party.loadShared() "snapshot" done!", source: http://127.0.0.1:8080/app.js (128)
+    [pid=77193][err] [1025/024515.816222:INFO:CONSOLE:128] "%cparty-log%c %c%s background-color: #88F; color: #00ffff; padding: 2px 5px; border-radius: 2px background: none; font-weight: bold p5.party v0.16.0", source: https://seeker-yarn-baseline-director.trycloudflare.com/app.js (128)
+    [pid=77193][err] [1025/024515.816293:INFO:CONSOLE:128] "%cparty-log background-color: #88F; color: #00ffff; padding: 2px 5px; border-radius: 2px p5.js not found. Use the p5party.* API, e.g. p5party.connect(). (Importing p5 in a bundler? Call p5party.installP5(p5).)", source: https://seeker-yarn-baseline-director.trycloudflare.com/app.js (128)
+    [pid=77193][err] [1025/024522.971406:INFO:CONSOLE:128] "%cparty-log background-color: #88F; color: #00ffff; padding: 2px 5px; border-radius: 2px p5party.loadShared() "race" done!", source: https://seeker-yarn-baseline-director.trycloudflare.com/app.js (128)
+    [pid=77193][err] [1025/024523.705169:INFO:CONSOLE:128] "%cparty-log background-color: #88F; color: #00ffff; padding: 2px 5px; border-radius: 2px p5party.loadShared() "status" done!", source: https://seeker-yarn-baseline-director.trycloudflare.com/app.js (128)
+    [pid=77193][err] [1025/024529.749397:INFO:CONSOLE:128] "%cparty-log%c %c%s background-color: #88F; color: #00ffff; padding: 2px 5px; border-radius: 2px background: none; font-weight: bold p5.party v0.16.0", source: https://seeker-yarn-baseline-director.trycloudflare.com/app.js (128)
+    [pid=77193][err] [1025/024529.749482:INFO:CONSOLE:128] "%cparty-log background-color: #88F; color: #00ffff; padding: 2px 5px; border-radius: 2px p5.js not found. Use the p5party.* API, e.g. p5party.connect(). (Importing p5 in a bundler? Call p5party.installP5(p5).)", source: https://seeker-yarn-baseline-director.trycloudflare.com/app.js (128)
+    [pid=77193][err] [1025/024536.944905:INFO:CONSOLE:128] "%cparty-log background-color: #88F; color: #00ffff; padding: 2px 5px; border-radius: 2px p5party.loadShared() "race" done!", source: https://seeker-yarn-baseline-director.trycloudflare.com/app.js (128)
+    [pid=77193][err] [1025/024537.655033:INFO:CONSOLE:128] "%cparty-log background-color: #88F; color: #00ffff; padding: 2px 5px; border-radius: 2px p5party.loadShared() "status" done!", source: https://seeker-yarn-baseline-director.trycloudflare.com/app.js (128)
+    [pid=77193] <gracefully close start>
+    Call log:
+      - waiting for locator('[data-action=start]')
+        - locator resolved to <button disabled data-action="start" class="button primary large">…</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is not enabled
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is not enabled
+        - retrying click action
+          - waiting 100ms
+        - waiting for element to be visible, enabled and stable
+        - element is not enabled
+      - retrying click action
+        - waiting 500ms
+        - waiting for element to be visible, enabled and stable
+      - element was detached from the DOM, retrying
+        - locator resolved to <button disabled data-action="start" class="button primary large">…</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is not enabled
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is not enabled
+        - retrying click action
+          - waiting 100ms
+        170 × waiting for element to be visible, enabled and stable
+            - element is not enabled
+          - retrying click action
+            - waiting 500ms
+        - waiting for element to be visible, enabled and stable
+
+
+       8 |  const h=await host(browser),a=await join(browser,h.code,'boat-1','Solo A'),b=await join(browser,h.code,'boat-2','Solo B');const errors:string[]=[];for(const p of[h.page,a.page,b.page])p.on('pageerror',e=>errors.push(e.message));
+       9 |  try{
+    > 10 |  await h.page.locator('[data-action=start]').click();await expect(a.page.locator('#phase-label')).toHaveText('RACE IS ON',{timeout:12000});await expect(a.page.locator('.paddle-button')).toHaveCount(1);await expect(a.page.locator('#race-river')).toHaveCount(0);
+         |                                              ^
+      11 |  for(let i=0;i<3;i++){const box=await a.page.locator('.paddle-button').boundingBox();await a.page.mouse.move(box.x+box.width/2,box.y+50);await a.page.mouse.down();await a.page.mouse.move(box.x+box.width/2,box.y+120,{steps:5});await a.page.mouse.up();await a.page.waitForTimeout(760);}
+      12 |  await expect(a.page.locator('#race-distance')).not.toHaveText('0 m');await expect(h.page.locator('#race-river')).toHaveAttribute('data-crew-asset','anatomical-rig');
+      13 |  await h.page.locator('#camera-shot').selectOption('bow');await expect(h.page.locator('#race-river')).toHaveAttribute('data-camera','bow');await h.page.locator('#follow-camera').selectOption('boat-2');await expect(h.page.locator('#race-river')).toHaveAttribute('data-camera-boat','boat-2');await h.page.getByRole('button',{name:'Auto',exact:true}).click();await expect(h.page.locator('#follow-camera')).toHaveValue('');
+        at /home/sajad-hussain/Desktop/devin/game-tests/event.spec.ts:10:46
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/event-solo-phones-row-paus-13bfa-nual-cameras-and-fullscreen/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/event-solo-phones-row-paus-13bfa-nual-cameras-and-fullscreen/test-failed-3.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/event-solo-phones-row-paus-13bfa-nual-cameras-and-fullscreen/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/event-solo-phones-row-paus-13bfa-nual-cameras-and-fullscreen/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/event-solo-phones-row-paus-13bfa-nual-cameras-and-fullscreen/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/event-solo-phones-row-paus-13bfa-nual-cameras-and-fullscreen/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    game-tests/event.spec.ts:7:5 › solo phones row, pause, reconnect, rematch; broadcast manual cameras and fullscreen 

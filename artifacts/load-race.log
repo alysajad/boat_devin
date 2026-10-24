@@ -1,0 +1,32 @@
+(node:67206) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/sajad-hussain/Desktop/devin/app/race-v2.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/sajad-hussain/Desktop/devin/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"event":"connected","room":"F8AQSW","clients":52,"durationSeconds":900}
+{"event":"broadcast","diagnostics":{"view":"broadcast","lookYaw":"0","lookPitch":"0","motion":"full","renderer":"3d","antialias":"true","quality":"low","pixelRatio":"1","collision":"true","activeChunks":"7","chunkKeys":"-2,-1,0,1,2,3,4","animatedCrew":"6","renderFrames":"757","residentInstances":"2312","crewAsset":"anatomical-rig","surfaceAssets":"3","fps":"30","drawCalls":"256","triangles":"648326","renderCost":"3.89"}}
+{"event":"progress","elapsed":48,"rounds":1,"accepted":1697,"stepP95":0.39176600000064354}
+{"event":"progress","elapsed":79,"rounds":2,"accepted":3647,"stepP95":0.37450299999909475}
+{"event":"progress","elapsed":109,"rounds":2,"accepted":5347,"stepP95":0.3713770000031218}
+{"event":"progress","elapsed":139,"rounds":2,"accepted":7447,"stepP95":0.39722600000095554}
+{"event":"progress","elapsed":187,"rounds":3,"accepted":9239,"stepP95":1.908393999998225}
+{"event":"progress","elapsed":232,"rounds":4,"accepted":10979,"stepP95":1.1538779999827966}
+{"event":"progress","elapsed":263,"rounds":4,"accepted":13029,"stepP95":0.33627199998591095}
+{"event":"progress","elapsed":302,"rounds":5,"accepted":14776,"stepP95":1.3202089999685995}
+{"event":"progress","elapsed":332,"rounds":5,"accepted":16826,"stepP95":0.3490860000019893}
+{"event":"progress","elapsed":362,"rounds":6,"accepted":18476,"stepP95":0.30169700004626065}
+{"event":"progress","elapsed":392,"rounds":6,"accepted":20526,"stepP95":0.3763269999762997}
+{"event":"progress","elapsed":423,"rounds":7,"accepted":22126,"stepP95":0.3353089999873191}
+{"event":"progress","elapsed":453,"rounds":7,"accepted":24176,"stepP95":0.34471799997845665}
+{"event":"progress","elapsed":484,"rounds":8,"accepted":26026,"stepP95":0.34517799998866394}
+{"event":"progress","elapsed":522,"rounds":8,"accepted":27973,"stepP95":1.107770000002347}
+{"event":"progress","elapsed":570,"rounds":9,"accepted":29920,"stepP95":1.082393000018783}
+{"event":"progress","elapsed":608,"rounds":9,"accepted":32115,"stepP95":0.3723889999091625}
+{"event":"progress","elapsed":648,"rounds":10,"accepted":34065,"stepP95":0.30279899993911386}
+{"event":"progress","elapsed":695,"rounds":11,"accepted":36062,"stepP95":0.9548629999626428}
+{"event":"progress","elapsed":725,"rounds":11,"accepted":38112,"stepP95":0.35306300001684576}
+{"event":"progress","elapsed":756,"rounds":12,"accepted":39788,"stepP95":0.3305299999192357}
+{"event":"progress","elapsed":786,"rounds":12,"accepted":41788,"stepP95":0.35044800001196563}
+{"event":"progress","elapsed":825,"rounds":13,"accepted":43486,"stepP95":0.35213200002908707}
+{"event":"progress","elapsed":855,"rounds":13,"accepted":45536,"stepP95":0.38299000007100403}
+{"event":"progress","elapsed":886,"rounds":14,"accepted":47536,"stepP95":0.39360900002066046}
+{"durationSeconds":911,"clients":53,"renderedBroadcast":true,"initialAssetBytes":5503727,"players":50,"boats":10,"rounds":14,"accepted":48936,"snapshots":18919,"meanSnapshotBytes":2342,"inputAckP95Ms":76.87336399999913,"worstWindowStepP95Ms":2.342809999943711,"errors":[]}

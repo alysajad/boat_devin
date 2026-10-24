@@ -1,0 +1,24 @@
+{
+  "measuredAt": "2026-10-24T21:12:31.046Z",
+  "kind": "HTTP preflight round trip; not stroke acknowledgment",
+  "results": [
+    {
+      "transport": "local",
+      "requests": 31,
+      "warmSamples": 30,
+      "coldMs": 4.364161000000003,
+      "p50Ms": 1.2530749999999955,
+      "p95Ms": 2.140492000000002,
+      "errors": []
+    },
+    {
+      "transport": "https-tunnel",
+      "requests": 31,
+      "warmSamples": 30,
+      "coldMs": 2609.950245,
+      "p50Ms": 405.4525969999995,
+      "p95Ms": 1602.8667779999996,
+      "errors": []
+    }
+  ]
+}

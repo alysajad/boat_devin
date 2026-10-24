@@ -1,0 +1,84 @@
+
+> kerala-boat-race@1.0.0 event
+> node scripts/launch.cjs --production --event
+
+(node:74378) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/sajad-hussain/Desktop/devin/app/race-v2.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/sajad-hussain/Desktop/devin/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+Kerala Boat Race — host screen: http://localhost:8080
+
+Phones on your Wi-Fi: http://10.103.32.145:8080
+2026-10-24T20:54:14Z INF Thank you for trying Cloudflare Tunnel. Doing so, without a Cloudflare account, is a quick way to experiment and try it out. However, be aware that these account-less Tunnels have no uptime guarantee, are subject to the Cloudflare Online Services Terms of Use (https://www.cloudflare.com/website-terms/), and Cloudflare reserves the right to investigate your use of Tunnels for violations of such terms. If you intend to use Tunnels in production you should use a pre-created named tunnel by following: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps
+2026-10-24T20:54:14Z INF Requesting new quick Tunnel on trycloudflare.com...
+INFO | State transition (logger-started): LOGGER_INIT -> SERVICE_INIT
+INFO | Listening for http connections on 0.0.0.0:6020
+INFO | Listening for health checks on path /health-check
+INFO | httpService ready: NodeJS HTTP Service
+INFO | State transition (services-started): SERVICE_INIT -> HANDLER_INIT
+INFO | State transition (handlers-started): HANDLER_INIT -> PLUGIN_INIT
+INFO | State transition (plugins-started): PLUGIN_INIT -> CONNECTION_ENDPOINT_INIT
+INFO | connectionEndpoint ready: WS Text Connection Endpoint
+INFO | connectionEndpoint ready: HTTP connection endpoint
+INFO | State transition (connection-endpoints-started): CONNECTION_ENDPOINT_INIT -> RUNNING
+INFO | Deepstream started
+Authoritative race simulation started
+Race API listening 6120
+(node:74370) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-24T20:54:21Z INF +--------------------------------------------------------------------------------------------+
+2026-10-24T20:54:21Z INF |  Your quick Tunnel has been created! Visit it at (it may take some time to be reachable):  |
+2026-10-24T20:54:21Z INF |  https://seeker-yarn-baseline-director.trycloudflare.com                                   |
+
+Secure phone link: https://seeker-yarn-baseline-director.trycloudflare.com (the room QR updates automatically).
+Keep this laptop and tunnel running. This temporary demo URL changes on restart.
+
+2026-10-24T20:54:21Z INF +--------------------------------------------------------------------------------------------+
+2026-10-24T20:54:21Z INF Cannot determine default configuration path. No file [config.yml config.yaml] in [~/.cloudflared ~/.cloudflare-warp ~/cloudflare-warp /etc/cloudflared /usr/local/etc/cloudflared]
+2026-10-24T20:54:21Z INF Version 2026.10.3 (Checksum 053b80b0a23031a038fdbf3c073f59f82b8f1f152aa67971d7383ffafc0dbab0)
+2026-10-24T20:54:21Z INF GOOS: linux, GOVersion: go1.27.3, GoArch: amd64
+2026-10-24T20:54:21Z INF Settings: map[ha-connections:1 no-autoupdate:true protocol:quic url:http://127.0.0.1:8080]
+2026-10-24T20:54:21Z INF Generated Connector ID: 724067b3-0231-4aec-a942-bb576fd392c9
+2026-10-24T20:54:21Z INF Initial protocol quic
+2026-10-24T20:54:21Z INF ICMP proxy will use 10.103.32.145 as source for IPv4
+2026-10-24T20:54:21Z INF ICMP proxy will use 2409:40f3:3418:d605:fb3a:e015:d5b6:e12d in zone wlo1 as source for IPv6
+2026-10-24T20:54:21Z INF ICMP proxy will use 10.103.32.145 as source for IPv4
+2026-10-24T20:54:21Z INF ICMP proxy will use 2409:40f3:3418:d605:fb3a:e015:d5b6:e12d in zone wlo1 as source for IPv6
+2026-10-24T20:54:21Z INF Starting metrics server on 127.0.0.1:20241/metrics
+2026-10-24T20:54:21Z INF Tunnel connection curve preferences: [X25519MLKEM768 CurveID(65074) CurveP256] connIndex=0 event=0 ip=2606:4700:a0::10
+2026-10-24T20:54:23Z INF Registered tunnel connection connIndex=0 connection=3bd15812-3df1-415a-bab1-90fecc58b670 event=0 ip=2606:4700:a0::10 location=maa03 protocol=quic
+2026-10-24T20:54:24Z INF +-------------------------------------------------------------------------------------+
+2026-10-24T20:54:24Z INF |                               CONNECTIVITY PRE-CHECKS                               |
+2026-10-24T20:54:24Z INF +-------------------------------------------------------------------------------------+
+2026-10-24T20:54:24Z INF |  COMPONENT         TARGET                     STATUS  DETAILS                       |
+2026-10-24T20:54:24Z INF |  DNS Resolution    region1.v2.argotunnel.com  PASS    DNS Resolved successfully     |
+2026-10-24T20:54:24Z INF |  DNS Resolution    region2.v2.argotunnel.com  PASS    DNS Resolved successfully     |
+2026-10-24T20:54:24Z INF |  UDP Connectivity  region1.v2.argotunnel.com  PASS    QUIC connection successful    |
+2026-10-24T20:54:24Z INF |  UDP Connectivity  region2.v2.argotunnel.com  PASS    QUIC connection successful    |
+2026-10-24T20:54:24Z INF |  TCP Connectivity  region1.v2.argotunnel.com  PASS    HTTP/2 connection successful  |
+2026-10-24T20:54:24Z INF |  TCP Connectivity  region2.v2.argotunnel.com  PASS    HTTP/2 connection successful  |
+2026-10-24T20:54:24Z INF |  Cloudflare API    api.cloudflare.com:443     PASS    API is reachable              |
+2026-10-24T20:54:24Z INF |                                                                                     |
+2026-10-24T20:54:24Z INF |  SUMMARY: Environment is healthy. cloudflared will use 'quic' as primary protocol.  |
+2026-10-24T20:54:24Z INF +-------------------------------------------------------------------------------------+
+2026-10-24T20:54:24Z INF precheck component="DNS Resolution" details="DNS Resolved successfully" run_id=c11780b1-7968-4ed9-b58f-3ebbc9d38ea6 status=pass target=region1.v2.argotunnel.com
+2026-10-24T20:54:24Z INF precheck component="DNS Resolution" details="DNS Resolved successfully" run_id=c11780b1-7968-4ed9-b58f-3ebbc9d38ea6 status=pass target=region2.v2.argotunnel.com
+2026-10-24T20:54:24Z INF precheck component="UDP Connectivity" details="QUIC connection successful" run_id=c11780b1-7968-4ed9-b58f-3ebbc9d38ea6 status=pass target=region1.v2.argotunnel.com
+2026-10-24T20:54:24Z INF precheck component="UDP Connectivity" details="QUIC connection successful" run_id=c11780b1-7968-4ed9-b58f-3ebbc9d38ea6 status=pass target=region2.v2.argotunnel.com
+2026-10-24T20:54:24Z INF precheck component="TCP Connectivity" details="HTTP/2 connection successful" run_id=c11780b1-7968-4ed9-b58f-3ebbc9d38ea6 status=pass target=region1.v2.argotunnel.com
+2026-10-24T20:54:24Z INF precheck component="TCP Connectivity" details="HTTP/2 connection successful" run_id=c11780b1-7968-4ed9-b58f-3ebbc9d38ea6 status=pass target=region2.v2.argotunnel.com
+2026-10-24T20:54:24Z INF precheck component="Cloudflare API" details="API is reachable" run_id=c11780b1-7968-4ed9-b58f-3ebbc9d38ea6 status=pass target=api.cloudflare.com:443
+2026-10-24T20:54:24Z INF precheck complete hard_fail=false run_id=c11780b1-7968-4ed9-b58f-3ebbc9d38ea6 suggested_protocol=quic
+2026-10-24T21:10:26Z WRN Serve tunnel error error="datagram manager error: timeout: no recent network activity" connIndex=0 event=0 ip=2606:4700:a0::10
+2026-10-24T21:10:26Z INF Retrying connection in up to 2s connIndex=0 event=0 ip=2606:4700:a0::10
+2026-10-24T21:10:28Z INF Tunnel connection curve preferences: [X25519MLKEM768 CurveID(65074) CurveP256] connIndex=0 event=0 ip=2606:4700:a8::8
+2026-10-24T21:10:29Z INF Registered tunnel connection connIndex=0 connection=09e19ad5-03d6-4d21-8797-19772c2d5679 event=0 ip=2606:4700:a8::8 location=bom08 protocol=quic
+2026-10-24T21:14:02Z ERR  error="stream 621 canceled by remote with error code 0" connIndex=0 event=1 ingressRule=0 originService=http://127.0.0.1:8080
+2026-10-24T21:14:02Z ERR Request failed error="stream 621 canceled by remote with error code 0" connIndex=0 dest=https://seeker-yarn-baseline-director.trycloudflare.com/assets/river/wood-normal.ktx2 event=0 ip=2606:4700:a8::8 type=http
+2026-10-24T21:14:02Z ERR  error="stream 633 canceled by remote with error code 0" connIndex=0 event=1 ingressRule=0 originService=http://127.0.0.1:8080
+2026-10-24T21:14:02Z ERR Request failed error="stream 633 canceled by remote with error code 0" connIndex=0 dest=https://seeker-yarn-baseline-director.trycloudflare.com/assets/crew/rower-low.glb event=0 ip=2606:4700:a8::8 type=http
+2026-10-24T21:14:02Z ERR  error="stream 625 canceled by remote with error code 0" connIndex=0 event=1 ingressRule=0 originService=http://127.0.0.1:8080
+2026-10-24T21:14:02Z ERR Request failed error="stream 625 canceled by remote with error code 0" connIndex=0 dest=https://seeker-yarn-baseline-director.trycloudflare.com/assets/river/shore-color.ktx2 event=0 ip=2606:4700:a8::8 type=http
+2026-10-24T21:14:02Z ERR  error="stream 629 canceled by remote with error code 0" connIndex=0 event=1 ingressRule=0 originService=http://127.0.0.1:8080
+2026-10-24T21:14:02Z ERR Request failed error="stream 629 canceled by remote with error code 0" connIndex=0 dest=https://seeker-yarn-baseline-director.trycloudflare.com/assets/crew/rower.glb event=0 ip=2606:4700:a8::8 type=http

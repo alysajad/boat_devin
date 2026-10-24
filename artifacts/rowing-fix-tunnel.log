@@ -1,0 +1,8 @@
+
+Running 1 test using 1 worker
+
+(node:82841) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 game-tests/event.spec.ts:7:5 › solo phones row, pause, release disconnected seats, rematch; broadcast manual cameras and fullscreen (48.2s)
+
+  1 passed (49.0s)

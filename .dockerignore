@@ -1,0 +1,11 @@
+node_modules
+.tools
+dist
+coverage
+test-results
+playwright-report
+.git
+.env
+
+assets/source
+artifacts

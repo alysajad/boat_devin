@@ -1,0 +1,10 @@
+
+Running 3 tests using 1 worker
+
+(node:82380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 game-tests/display.spec.ts:2:60 › portrait controller: motion granted, swipe fallback, no 3D downloads (10.0s)
+  ✓  2 game-tests/display.spec.ts:2:60 › portrait controller: motion denied, swipe fallback, no 3D downloads (2.7s)
+  ✓  3 game-tests/display.spec.ts:2:60 › portrait controller: motion missing, swipe fallback, no 3D downloads (1.7s)
+
+  3 passed (15.3s)

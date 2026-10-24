@@ -1,0 +1,11 @@
+(node:73240) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/sajad-hussain/Desktop/devin/app/race-v2.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/sajad-hussain/Desktop/devin/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"event":"connected","room":"KUPSNV","clients":52,"durationSeconds":900}
+{"event":"broadcast","diagnostics":{"view":"broadcast","lookYaw":"0","lookPitch":"0","motion":"full","renderer":"3d","antialias":"true","quality":"high","pixelRatio":"1","collision":"false","camera":"chase","cameraBoat":"boat-1","activeChunks":"7","chunkKeys":"-2,-1,0,1,2,3,4","animatedCrew":"12","renderFrames":"948","residentInstances":"2564","crewAsset":"anatomical-rig","surfaceAssets":"3","fps":"60","drawCalls":"154","triangles":"751816","renderCost":"4.49"}}
+{"event":"progress","elapsed":43,"rounds":1,"accepted":1650,"stepP95":0.6085840000014286}
+{"event":"progress","elapsed":76,"rounds":2,"accepted":3300,"stepP95":0.6290920000028564}
+{"event":"progress","elapsed":114,"rounds":3,"accepted":4900,"stepP95":3.092461000007461}
+{"event":"progress","elapsed":145,"rounds":4,"accepted":6511,"stepP95":0.3956330000073649}
+{"event":"progress","elapsed":185,"rounds":5,"accepted":8093,"stepP95":0.04047599999466911}
