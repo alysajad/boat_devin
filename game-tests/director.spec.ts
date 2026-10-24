@@ -26,7 +26,7 @@ test('director has live previews, clickable seat POV, authoritative stroke label
   const actor=room.actors[0];actor.client.event.emit(`race_v3-${room.code}/stroke/${actor.session.id}`,{seq:1,round:1,mode:'swipe',at:Date.now()});await expect(page.locator(`.rower-label[data-player="${actor.session.id}"]`)).toHaveAttribute('data-strokes','1');
   await page.locator('#pov-rower').selectOption(actor.session.id);await expect(page.locator('#race-river')).toHaveAttribute('data-camera-player',actor.session.id);await page.screenshot({path:'artifacts/director-pov.png'});
   await page.locator('[data-action=director-pause]').click();await expect(page.locator('#phase-label')).toHaveText('RACE PAUSED');await page.locator('[data-action=director-pause]').click();await expect(page.locator('#phase-label')).toHaveText('RACE IS ON',{timeout:10000});
-  await page.getByRole('button',{name:'Overview camera preview',exact:true}).click();await page.locator('#graphics').selectOption('uhd');await expect.poll(async()=>Number(await page.locator('#race-river').getAttribute('data-pixel-ratio'))).toBeGreaterThan(1);await page.screenshot({path:'artifacts/director-overview.png'});
+  await page.getByRole('button',{name:'Overview camera preview',exact:true}).click();await page.locator('#graphics').selectOption('uhd');await expect.poll(async()=>Number(await page.locator('#race-river').getAttribute('data-pixel-ratio'))).toBeGreaterThan(1);await page.waitForTimeout(1500);await page.screenshot({path:'artifacts/director-overview.png'});
   await page.locator('[data-action=director-exit]').click();await expect(page.locator('#app')).not.toHaveClass(/broadcast-fullscreen/);expect(await page.evaluate(()=>!!document.fullscreenElement)).toBe(false);
   await page.getByRole('button',{name:'Fullscreen',exact:true}).last().click();await expect(page.locator('#app')).toHaveClass(/broadcast-fullscreen/);await page.keyboard.press('Escape');await expect(page.locator('#app')).not.toHaveClass(/broadcast-fullscreen/);await page.reload();await expect(page.locator('#app')).toHaveClass(/broadcast-fullscreen/);await page.locator('[data-action=director-exit]').click();await expect(page.locator('#app')).not.toHaveClass(/broadcast-fullscreen/);expect(errors).toEqual([]);
  }finally{room.close();}
@@ -41,6 +41,13 @@ test('clicking a character mesh selects its POV and private feedback cannot be f
  try{
   await page.getByRole('button',{name:'Side camera preview',exact:true}).click();await page.waitForTimeout(1200);
   const name=page.getByRole('button',{name:'POV: Riya',exact:true}),box=await name.boundingBox();expect(box).toBeTruthy();await page.mouse.click(box!.x+box!.width/2,box!.y+box!.height+12);await expect(page.locator('#race-river')).toHaveAttribute('data-camera-player',room.actors[2].session.id);
+  await expect(page.getByRole('button',{name:'Back to broadcast',exact:true})).toBeVisible();await page.getByRole('button',{name:'Back to broadcast',exact:true}).click();await expect(page.locator('#pov-rower')).toHaveValue('');
+  for(const shot of ['chase','bow','overview']){
+   await page.locator('#camera-shot').selectOption(shot);await page.waitForTimeout(1500);
+   const label=page.getByRole('button',{name:'POV: Riya',exact:true}),position=await label.boundingBox();expect(position).toBeTruthy();let hit=false;
+   for(let offset=2;offset<=20;offset+=2){await page.mouse.move(position!.x+position!.width/2,position!.y+position!.height+offset);if(await label.getAttribute('data-hovered')==='true'){await page.mouse.click(position!.x+position!.width/2,position!.y+position!.height+offset);hit=true;break;}}
+   expect(hit,`Riya is clickable from ${shot}`).toBe(true);await expect(page.locator('#race-river')).toHaveAttribute('data-camera-player',room.actors[2].session.id);await page.getByRole('button',{name:'Back to broadcast',exact:true}).click();
+  }
   const {client,session}=room.actors[0],other=room.actors[1].session,errors:string[]=[];client.on('error',(e:any)=>errors.push(String(e)));client.event.subscribe(`race_v3-${room.code}/rowing`,()=>{});client.event.subscribe(`race_v3-${room.code}/feedback/${other.id}`,()=>{});client.event.emit(`race_v3-${room.code}/feedback/${session.id}`,{kind:'stroke',id:session.id,round:1,strokes:999,at:Date.now()});await expect.poll(()=>errors.length).toBeGreaterThanOrEqual(3);
  }finally{room.close();}
 });

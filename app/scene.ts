@@ -40,9 +40,9 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   let yaw = 0, pitch = 0, preview = 0, localStrokeAt = -Infinity;
   let predictionCount = 0, predictionUntil = 0;
   const scene = new THREE.Scene();
-  const sky = new THREE.Color('#b9cec5');
+  const sky = new THREE.Color('#c4dcd7');
   scene.background = sky;
-  scene.fog = new THREE.Fog('#b9cec5', 65, 190);
+  scene.fog = new THREE.Fog('#c4dcd7', 65, 190);
   const camera = new THREE.PerspectiveCamera(options.view === 'player' ? 72 : 50, 1, .045, 1000);
   camera.rotation.order = 'YXZ';
   element.dataset.view = options.view;
@@ -157,8 +157,8 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   observer = new ResizeObserver(resize);
   observer.observe(element);
   resize();
-  scene.add(new THREE.HemisphereLight('#dce8ed', '#414738', 1.7));
-  const sunlight = new THREE.DirectionalLight('#ffe2ac', 2.8);
+  scene.add(new THREE.HemisphereLight('#d9efff', '#5c6145', 2.05));
+  const sunlight = new THREE.DirectionalLight('#ffdfaf', 2.45);
   sunlight.position.set(-35, 50, -30);
   scene.add(sunlight);
   function geometry<T extends THREE.BufferGeometry>(g: T): T { geometries.add(g); return g; }
@@ -181,7 +181,10 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     vertexShader: 'varying vec3 skyDirection; void main(){skyDirection=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
     fragmentShader: `precision highp float; varying vec3 skyDirection;
       void main(){vec3 d=normalize(skyDirection);float h=max(d.y,0.);
-      vec3 color=mix(vec3(.64,.73,.70),vec3(.16,.35,.48),pow(h,.55));
+      vec3 color=mix(vec3(.55,.72,.72),vec3(.035,.20,.42),pow(h,.48));
+      vec2 q=d.xz/max(.12,d.y+.22);float clouds=sin(q.x*2.3+sin(q.y*1.7))*.5+sin(q.y*3.1-q.x*.7)*.25;
+      float veil=smoothstep(.30,.72,clouds)*smoothstep(.03,.18,h)*(1.-smoothstep(.4,.8,h));
+      color=mix(color,vec3(.83,.88,.82),veil*.48);
       float sun=max(dot(d,normalize(vec3(-35.,50.,-30.))),0.);
       color+=vec3(1.,.69,.31)*(pow(sun,64.)*.22+pow(sun,1800.)*2.);
       gl_FragColor=vec4(color,1.);
@@ -234,17 +237,21 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     fragmentShader: `precision highp float;
       varying vec3 world; varying float depth; uniform float time; uniform float still; uniform float fogNear; uniform float fogFar;
       void main(){float t=time*(1.0-still);
-        float a=world.x*1.7+world.z*2.1+t*.8; float b=world.x*3.3-world.z*1.4-t*.55;
-        float c=world.x*5.7+world.z*.73+t*1.1;
-        float ca=cos(a+sin(b*.17)*.8),cb=cos(b+sin(a*.21)*.7);
-        vec3 normal=normalize(vec3(.035*ca+.024*cb+.009*cos(c),1.,.045*ca-.018*cb+.006*cos(c)));
-        vec3 eye=normalize(cameraPosition-world); float fresnel=.035+.65*pow(1.-max(dot(normal,eye),0.),4.);
-        vec3 deep=vec3(.022,.10,.08), reflected=vec3(.48,.60,.57);
-        vec3 color=mix(deep,reflected,fresnel);
-        vec3 sun=normalize(vec3(-.5,.8,-.35)); vec3 halfVector=normalize(sun+eye);
-        color+=vec3(.92,.83,.57)*pow(max(dot(normal,halfVector),0.),100.)*.65;
-        color+=vec3(.007,.015,.008)*(sin(world.x*.19+world.z*.15)*.5+.5);
-        color=mix(color,vec3(.56,.69,.64),smoothstep(fogNear,fogFar,depth));
+        // Crossed, low-amplitude ripples fade into the horizon instead of aliasing into stripes.
+        float a=world.x*.82+world.z*1.12+t*.65;float b=world.x*1.63-world.z*.71-t*.43;
+        float c=world.x*3.7+world.z*2.3+t*.92;
+        float detail=1.-smoothstep(25.,110.,depth);
+        float ca=cos(a+sin(b*.33)),cb=cos(b+sin(a*.27));
+        vec3 normal=normalize(vec3(.018*ca+.012*cb+.004*cos(c)*detail,1.,.024*ca-.011*cb+.003*sin(c)*detail));
+        vec3 eye=normalize(cameraPosition-world);float fresnel=.08+.78*pow(1.-max(dot(normal,eye),0.),4.);
+        vec3 reflection=reflect(-eye,normal);
+        vec3 reflected=mix(vec3(.40,.59,.56),vec3(.19,.46,.61),max(0.,reflection.y));
+        vec3 color=mix(vec3(.018,.16,.13),reflected,fresnel);
+        vec3 sun=normalize(vec3(-.5,.8,-.35));vec3 halfVector=normalize(sun+eye);
+        float highlight=pow(max(dot(normal,halfVector),0.),160.);
+        color+=vec3(.95,.81,.51)*highlight*.48;
+        color+=vec3(.009,.023,.019)*sin(a+sin(b)*1.7)*sin(b+cos(c)*.6)*detail;
+        color=mix(color,vec3(.55,.72,.68),smoothstep(fogNear,fogFar,depth));
         gl_FragColor=vec4(color,1.); #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`,
@@ -265,7 +272,11 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   type Crew = { root: THREE.Group; model?: ReturnType<typeof createCrew>; paddle: THREE.Group; splash: THREE.Group; playerId: string; strokes: number; at: number; side: number };
   type BoatScene = { root: THREE.Group; crew: Crew[]; wake: THREE.Group; x: number; distance: number; heading: number; collision: THREE.Mesh; collisions: number; collisionAt: number };
   const boats = {} as Record<Team, BoatScene>;
-  const wakeMat = new THREE.MeshBasicMaterial({ color: '#dcf4d9', transparent: true, opacity: .4, depthWrite: false, side: THREE.DoubleSide }); materials.add(wakeMat);
+  const softPixels=new Uint8Array(64*64*4);
+  for(let y=0;y<64;y++)for(let x=0;x<64;x++){const i=(y*64+x)*4,r=Math.hypot((x-31.5)/31.5,(y-31.5)/31.5);softPixels.set([255,255,255,Math.round(Math.pow(Math.max(0,1-r*r),2)*255)],i);}
+  const softMask=new THREE.DataTexture(softPixels,64,64);softMask.needsUpdate=true;softMask.magFilter=softMask.minFilter=THREE.LinearFilter;textures.add(softMask);
+  const hullShade=new THREE.MeshBasicMaterial({color:'#092e2b',map:softMask,transparent:true,opacity:.48,depthWrite:false});materials.add(hullShade);
+  const wakeMat = new THREE.MeshBasicMaterial({ color: '#d5eee6', map:softMask, transparent: true, opacity: .45, depthWrite: false, side: THREE.DoubleSide }); materials.add(wakeMat);
   const wakeGeo = geometry(new THREE.PlaneGeometry(1, 1));
   const collisionGeo = geometry(new THREE.RingGeometry(.88, 1, 32));
   const collisionMat = new THREE.MeshBasicMaterial({ color: '#ff9b56', transparent: true, opacity: .8, depthWrite: false, side: THREE.DoubleSide });
@@ -301,7 +312,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   loadSurface('wood-color.jpg', true, texture => {
     texture.repeat.set(1, 2);
     [wood,deck,trim,sideMaterial].forEach((m,i)=>{
-      m.map=texture;m.color.set(['#b79777','#fff4df','#e4c99c','#b79777'][i]);m.bumpMap=null;m.needsUpdate=true;
+      m.map=texture;m.color.set(['#c8a77d','#fff1d6','#f6d69e','#c8a77d'][i]);m.roughness=i===0||i===3?.45:.58;m.bumpMap=null;m.needsUpdate=true;
     });
   });
   loadSurface('wood-normal.jpg', false, texture => {
@@ -318,11 +329,12 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   const bladeGeo = geometry(new THREE.ExtrudeGeometry(bladeShape, { depth: .025, bevelEnabled: true, bevelThickness: .008, bevelSize: .012, bevelSegments: 1, curveSegments: 5 }));
   const armA = new THREE.Vector3(), armB = new THREE.Vector3(), elbow = new THREE.Vector3();
   const bladePoint = new THREE.Vector3();
-  const contactShade = new THREE.MeshBasicMaterial({color:'#241d15',transparent:true,opacity:.18,depthWrite:false}); materials.add(contactShade);
+  const contactShade = new THREE.MeshBasicMaterial({color:'#241d15',map:softMask,transparent:true,opacity:.24,depthWrite:false}); materials.add(contactShade);
   const contactGeo = geometry(new THREE.CircleGeometry(1, 16));
   for (const team of teams) {
     const root = new THREE.Group(); dynamicRoot.add(root);
     const length=initial.boats[team].length, capacity=initial.boats[team].crewCount;
+    node(root,wakeGeo,hullShade,0,WATER_LEVEL+.006,0,2.6,length*1.08,1).rotation.x=-Math.PI/2;
     const hull = new THREE.Group(); hull.scale.set(1.65/1.48,1,length/9.8);root.add(hull);
     node(hull, hullGeo, wood, 0, .19, 0, 1, 1, 1);
     node(hull, hullSides, sideMaterial, 0, 0, 0, 1, 1, 1);
@@ -358,7 +370,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     }
     const wake = new THREE.Group(); dynamicRoot.add(wake);
     for (let i = 0; i < 8; i++) {
-      const mesh = node(wake, wakeGeo, wakeMat, (i % 2 ? 1 : -1) * (.7 + Math.floor(i / 2) * .35), -.095, length/2 + Math.floor(i / 2) * 1.6, .055, 2.2, 1);
+      const mesh = node(wake, wakeGeo, wakeMat, (i % 2 ? 1 : -1) * (.7 + Math.floor(i / 2) * .35), -.095, length/2 + Math.floor(i / 2) * 1.6, .23, 3.2, 1);
       mesh.rotation.set(-Math.PI / 2, 0, (i % 2 ? -1 : 1) * .22);
     }
     const collision = node(root, collisionGeo, collisionMat, 0, -.085, 0, 1.3, length/2+.3, 1);
@@ -497,15 +509,26 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     cam.position.lerp(cameraPoint,blend);if(cam===camera){aim.lerp(cameraTarget,blend);cam.lookAt(aim);}else cam.lookAt(cameraTarget);
     return anchor;
   }
-  const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();let down:{x:number;y:number;lastX:number;lastY:number}|undefined;
+  const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),localRay=new THREE.Ray(),inverse=new THREE.Matrix4(),hitPoint=new THREE.Vector3();
+  const rowerBounds=new THREE.Box3(new THREE.Vector3(-.36,.35,-.32),new THREE.Vector3(.36,1.65,.32));
+  let down:{x:number;y:number;lastX:number;lastY:number}|undefined,hovered='';
+  function pickRower(event:PointerEvent){
+    const rect=element.getBoundingClientRect();pointer.set((event.clientX-rect.left)/rect.width*2-1,1-(event.clientY-rect.top)/rect.height*2);camera.updateMatrixWorld();raycaster.setFromCamera(pointer,camera);
+    let nearest=Infinity,id='';
+    for(const boat of Object.values(boats))for(const crew of boat.crew){
+      if(!crew.root.visible||!crew.playerId||crew.playerId===selectedPlayer())continue;
+      crew.root.updateWorldMatrix(true,false);inverse.copy(crew.root.matrixWorld).invert();localRay.copy(raycaster.ray).applyMatrix4(inverse);
+      if(!localRay.intersectBox(rowerBounds,hitPoint))continue;hitPoint.applyMatrix4(crew.root.matrixWorld);
+      const distance=hitPoint.distanceTo(raycaster.ray.origin);if(distance<nearest){nearest=distance;id=crew.playerId;}
+    }return id;
+  }
+  function hoverRower(id:string){renderer!.domElement.style.cursor=id?'pointer':selectedPlayer()?'grab':'default';if(id===hovered)return;rowerLabels.get(hovered)?.removeAttribute('data-hovered');hovered=id;rowerLabels.get(id)?.setAttribute('data-hovered','true');}
   const pointerDown=(event:PointerEvent)=>{if(event.button!==0)return;down={x:event.clientX,y:event.clientY,lastX:event.clientX,lastY:event.clientY};renderer!.domElement.setPointerCapture(event.pointerId);};
-  const pointerMove=(event:PointerEvent)=>{if(!down||!selectedPlayer())return;controls.setLook(yaw-(event.clientX-down.lastX)*.004,pitch-(event.clientY-down.lastY)*.004);down.lastX=event.clientX;down.lastY=event.clientY;};
-  const pointerUp=(event:PointerEvent)=>{const start=down;down=undefined;if(!start||Math.hypot(event.clientX-start.x,event.clientY-start.y)>6)return;const rect=element.getBoundingClientRect();pointer.set((event.clientX-rect.left)/rect.width*2-1,1-(event.clientY-rect.top)/rect.height*2);raycaster.setFromCamera(pointer,camera);
-    const targets=Object.values(boats).flatMap(b=>b.crew).filter(c=>c.root.visible);const hit=raycaster.intersectObjects(targets.map(c=>c.root),true)[0];if(!hit)return;let object:THREE.Object3D|null=hit.object;while(object){const crew=targets.find(c=>c.root===object);if(crew){options.selectPlayer?.(crew.playerId);return;}object=object.parent;}
-  };
-  const pointerCancel=()=>{down=undefined;};
-  renderer.domElement.addEventListener('pointerdown',pointerDown);renderer.domElement.addEventListener('pointermove',pointerMove);renderer.domElement.addEventListener('pointerup',pointerUp);renderer.domElement.addEventListener('pointercancel',pointerCancel);
-  removePicking=()=>{renderer?.domElement.removeEventListener('pointerdown',pointerDown);renderer?.domElement.removeEventListener('pointermove',pointerMove);renderer?.domElement.removeEventListener('pointerup',pointerUp);renderer?.domElement.removeEventListener('pointercancel',pointerCancel);};
+  const pointerMove=(event:PointerEvent)=>{if(!down){hoverRower(pickRower(event));return;}if(!selectedPlayer())return;renderer!.domElement.style.cursor='grabbing';controls.setLook(yaw-(event.clientX-down.lastX)*.004,pitch-(event.clientY-down.lastY)*.004);down.lastX=event.clientX;down.lastY=event.clientY;};
+  const pointerUp=(event:PointerEvent)=>{const start=down;down=undefined;renderer!.domElement.style.cursor=selectedPlayer()?'grab':'default';if(!start||Math.hypot(event.clientX-start.x,event.clientY-start.y)>6)return;const id=pickRower(event);if(id){options.selectPlayer?.(id);hoverRower('');}};
+  const pointerCancel=()=>{down=undefined;hoverRower('');};
+  renderer.domElement.addEventListener('pointerdown',pointerDown);renderer.domElement.addEventListener('pointermove',pointerMove);renderer.domElement.addEventListener('pointerup',pointerUp);renderer.domElement.addEventListener('pointercancel',pointerCancel);renderer.domElement.addEventListener('pointerleave',pointerCancel);
+  removePicking=()=>{renderer?.domElement.removeEventListener('pointerdown',pointerDown);renderer?.domElement.removeEventListener('pointermove',pointerMove);renderer?.domElement.removeEventListener('pointerup',pointerUp);renderer?.domElement.removeEventListener('pointercancel',pointerCancel);renderer?.domElement.removeEventListener('pointerleave',pointerCancel);};
   const previewCamera=new THREE.PerspectiveCamera(50,240/135,.045,1000),pixels=new Uint8Array(240*135*4);
   let previewBusy=false,previewAt=0,previewIndex=0,labelsAt=0;
   if(options.previewRoot){previewTarget=new THREE.WebGLRenderTarget(240,135);previewTarget.texture.colorSpace=THREE.SRGBColorSpace;}

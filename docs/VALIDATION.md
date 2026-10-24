@@ -2,6 +2,14 @@
 
 Implemented portrait motion/swipe controllers, configurable motion sensitivity and rowing force, automatic crew growth, fixed courses, synchronized crew propulsion, distance/timed races, broadcast direction and an HTTPS event launcher. Protocol 2 rooms must be replaced.
 
+## Graphics polish and reliable character selection — follow-up
+
+The river now uses softer crossed ripples with distance fading, a blue atmospheric sky, blended wakes and hull contact shading, warmer timber, and layered foliage/shore plants. These reuse the existing renderer and instanced scenery; phones still do not load the scene.
+
+Character selection now intersects stable seated-body bounds instead of depending on animated mesh geometry or render batching. Hover highlights the corresponding name. Clicking the body or name opens that player's seat POV; **Back to broadcast** restores Auto. The browser regression selects a character from side, chase, bow and overview cameras, verifies hover feedback and the return control, and retains the existing fullscreen/POV/private-event checks. TypeScript and production build pass. All three director browser scenarios pass. [Browser log](../artifacts/graphics-polish-browser.log), [overview](../artifacts/director-overview.png), [first person](../artifacts/director-pov.png).
+
+A 60-second local load window with the polished scene and fullscreen broadcast passed: 50 controllers, 10 boats, 53 connections, two rounds, 3,000 acknowledged strokes, 9.16 ms acknowledgment P95 and 0.54 ms worst sampled server-step P95, with no reported errors (72 seconds including setup). FPS samples were 11, 30, 30, then seven readings at 60. Startup frame-rate dips remain; this is not a guarantee of sustained UHD/60 FPS. [Load result](../artifacts/graphics-polish-load.json), [load log](../artifacts/graphics-polish-load.log), [50-player scene](../artifacts/graphics-polish-load-broadcast.png). The final cursor-only adjustment does not affect rendering or transport. This pass did not repeat the physical-phone, tunnel or 15-minute endurance checks below.
+
 ## Director, seat POV and stroke feedback — follow-up
 
 The laptop now has clickable character/name POV, five live camera previews sharing one renderer, translucent controls and rower names, and fullscreen director entry from Start. Exit/Escape and the browser-fullscreen refusal fallback are tested. Host reload during a race restores the viewport layout. UHD/Adaptive/Performance controls expose actual resolution and FPS; UHD is a pixel budget, not a frame-rate guarantee. Accepted server timestamps drive paddles and name flashes, with immediate private controller feedback and an admin/watch-only stroke stream. Clock-corrected event cadence tolerates compressed packet arrival gaps while retaining the 700 ms cadence and stale/future-event bounds.

@@ -17,7 +17,7 @@ export function createScenery(scene: THREE.Scene, assets: Assets, broadcast: boo
   const { geometry, material, wood, deck, trim } = assets;
   const box = geometry(new THREE.BoxGeometry(1, 1, 1));
   const round = geometry(new THREE.SphereGeometry(1, 16, 10));
-  const foliage = geometry(round.clone());
+  const foliage = geometry(new THREE.SphereGeometry(1,24,16));
   const foliagePositions = foliage.getAttribute('position');
   const foliageColors: number[] = [];
   for(let i=0;i<foliagePositions.count;i++){
@@ -47,8 +47,8 @@ export function createScenery(scene: THREE.Scene, assets: Assets, broadcast: boo
   }
   frond.setAttribute('position',new THREE.Float32BufferAttribute(leaves,3));frond.computeVertexNormals();
   const definitions: Record<string, [THREE.BufferGeometry, THREE.Material, number]> = {
-    trunk: [trunk, material('#907c53'), 7 * 9], leaf: [frond, leaf, 7 * 9 * 8],
-    bush: [foliage, foliageMaterial, 7 * 24], bank: [round, material('#6b854f'), 7 * 10],
+    trunk: [trunk, material('#907c53'), 7 * 9], leaf: [frond, leaf, 7 * (9 * 8 + 32)],
+    bush: [foliage, foliageMaterial, 7 * 32], bank: [round, material('#6b854f'), 7 * 10],
     buoy: [round, trim, 7 * 24], wall: [box, material('#e1d8b5'), 7 * 3],
     roof: [roof, material('#9c5236'), 7 * 2], timber: [box, wood, 7 * 40],
     reed: [round, material('#c1a264'), 7 * 2], hull: [round, wood, 7 * 2],
@@ -81,12 +81,17 @@ export function createScenery(scene: THREE.Scene, assets: Assets, broadcast: boo
       for (let j = 0; j < 7; j++) put('leaf', x, h, z, 1, 1, 1, j * Math.PI * 2 / 7 + rand(i + 80));
       put('bush', x + side * 1.5, .58, z + 3, 1.8, 1, 1.7);
     }
+    for(let i=0;i<16;i++){const side=i%2?1:-1,x=side*(riverWidth/2+1.2+rand(280+i)*1.8),z=z0-Math.floor(i/2)*5;
+      for(const angle of [0,Math.PI])put('leaf',x,.38,z,.22,.42,.22,angle+rand(300+i)*2);
+    }
     // Layered vegetation closes the empty horizon without loading distant forest models.
     const thickets=treeKeys.length?2:quality==='low'?4:12;
     for(let i=0;i<thickets;i++){
       const side=i%2?1:-1,h=2.4+rand(120+i)*1.8;
       if(treeKeys.length){for(const treeKey of treeKeys)put(treeKey,side*(riverWidth/2+4+rand(140+i)*7),0,z0-rand(160+i)*40,h*2,h*2,h*2,rand(180+i)*Math.PI);}else put('bush',side*(riverWidth/2+10+rand(140+i)*9),h*.6,z0-rand(160+i)*40,h*1.45,h,h*1.6,rand(180+i)*Math.PI);
     }
+    // A low, continuous canopy gives the palms depth and closes gaps behind the riverbank.
+    for(let i=0;i<8;i++){const side=i%2?1:-1;put('bush',side*(riverWidth/2+13+rand(220+i)*4),1.8,z0-Math.floor(i/2)*10,5.5,2.6+rand(240+i),6,rand(260+i));}
     for (let i = 0; i < 8; i++) put('bank', (i % 2 ? 1 : -1) * (riverWidth/2+1.8), WATER_LEVEL - .03, z0 - Math.floor(i / 2) * 10 - 4, 1.8, .48, 6);
     for (const side of [-1, 1]) for (let i = 0; i < 5; i++) {
       put('buoy', side * (riverWidth/2-.25), WATER_LEVEL + .08, z0 - i * 8, .095, .13, .095);

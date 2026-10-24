@@ -166,3 +166,7 @@ html:fullscreen,html:fullscreen body{width:100%;height:100%;overflow:hidden;back
 @media(max-width:800px){.director-hint{display:none}.director-hud>span:first-child{margin-right:auto}.director-room.broadcast-fullscreen .broadcast-tools{bottom:108px}.director-room.broadcast-fullscreen .camera-strip{height:90px}.camera-tile small{display:none}.director-room.broadcast-fullscreen #network-status{display:none}.director-room.broadcast-fullscreen #leaderboard{max-width:220px}.director-room.broadcast-fullscreen .broadcast-tools label{font-size:0}.director-room.broadcast-fullscreen .broadcast-tools select{max-width:100px}}
 @media(prefers-reduced-motion:reduce){.rower-label,.camera-tile,.broadcast-tools{transition:none!important}}
 .director-room.broadcast-fullscreen #connection-banner{position:fixed;z-index:30;top:84px;left:20%;right:20%;padding:10px;border-radius:6px;background:#ffc857;color:#123047;text-align:center}
+
+.rower-label[data-hovered=true]{opacity:1;background:#123047ed;outline:2px solid var(--rower-color);outline-offset:3px}
+.director-hud [data-action=leave-pov]{border-color:#f3cf8b;color:#ffe3af;opacity:.95}
+#race-river>canvas{touch-action:none}
