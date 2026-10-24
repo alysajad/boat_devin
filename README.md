@@ -44,7 +44,7 @@ For participants on different networks, a nearby persistent HTTPS server is a pr
 - **Rowing force multiplier** defaults to **1.5×**, adjustable from **0.5–3×**. This amplifies every accepted stroke equally. Increase it to make boats faster with comfortable effort.
 - **Motion sensitivity** defaults to **1.3×**, adjustable from **0.5–2.5×**. Higher values recognize gentler motion, including during calibration. Rest noise still sets a minimum detection threshold.
 - Save settings in the lobby. Move/remove participants or auto-balance there. Everyone must be connected and Ready; changed seats/settings clear readiness.
-- Start, pause/resume, return to lobby, or rematch. Late arrivals wait and are seated automatically when the next lobby opens. The 50-player limit includes waiting participants.
+- Start, pause/resume, return to lobby, or rematch. Late arrivals wait and are seated automatically when the next lobby opens. The 50-player limit includes waiting participants. Lobby scene rebuilds batch rapid joins for 700 ms; the roster updates immediately and race start rebuilds without that delay.
 
 ## Row with a phone
 
@@ -63,15 +63,23 @@ The server owns all roster, readiness, stroke validation, physics and results. B
 
 Every accepted stroke adds forward thrust divided by the **starting crew size**. Solo and large crews have the same maximum propulsion ceiling at equal cadence. The force multiplier scales that budget uniformly. Linear/quadratic drag slows the boat; each stroke's force builds through a 0.32-second submerged drive.
 
-Distinct teammates rowing inside a 300 ms-wide window earn up to a 10% bonus. The display averages coordination over the recent two seconds; solo boats receive full synchronization credit. Base thrust starts immediately. The small bonus settles after 800 ms so bounded network delays can be included fairly. Sequence, round, controller mode, cadence, connection epoch and timestamp bounds are validated by the server. Clients correct timestamps using server time and the lowest-latency sample from the last ten HTTP round trips, reducing clock jumps from delayed responses; raw sensor data never leaves the phone.
+Distinct teammates rowing inside a 300 ms-wide window earn up to a 10% bonus. The display averages coordination over the recent two seconds; solo boats receive full synchronization credit. Base thrust starts immediately. The small bonus settles after 800 ms so bounded network delays can be included fairly. Sequence, round, controller mode, cadence, connection epoch and timestamp bounds are validated by the server. The 700 ms cadence gate uses bounded event timestamps, so network jitter can compress arrival gaps without discarding correctly timed strokes. Inputs older than 500 ms or more than 100 ms in the future are still rejected. Clients correct timestamps using server time and the lowest-latency sample from recent WebSocket heartbeat exchanges (HTTP initializes the clock), reducing clock jumps from delayed responses; raw sensor data never leaves the phone.
 
 In distance mode the first bow crossing ends the round; crossing times are interpolated within the authoritative simulation step, and other boats rank by progress. Crossings less than 1 ms apart tie. Timed races rank bow distance at expiry (within 1 mm ties). Pause freezes race time and clears pending drives; resume uses a new countdown. A server scheduling gap over two seconds triggers a pause.
+
+Accepted strokes are acknowledged immediately on a private controller channel and sent to authorized broadcasts. Rejected strokes generate no animation event. Broadcast paddle phases and name flashes use the authoritative stroke timestamp; detailed snapshots recover missed events without replaying or rewinding stroke counts. Network propagation delay still applies. Healthy phones use a WebSocket heartbeat for clock checks and reduce HTTP preflight polling to once per 30 seconds.
 
 Physics runs at 60 Hz. Controllers subscribe to a compact 5 Hz status record; admin/broadcast clients receive detailed 20 Hz snapshots. Permissions prevent players from subscribing to detailed snapshots, writing race state, reading other rooms or forging another player's channel.
 
 ## Laptop broadcast
 
+Click **Start the race** on the laptop to enter fullscreen director view from that user gesture. **Exit director** at the top right or **Esc** returns to event controls. If native fullscreen is refused, the same layout fills the browser viewport and remains escapable. Reloading the host during a race restores director view; native fullscreen still needs a tap. Pause/resume and return-to-lobby controls are also available on the overlay.
+
+Click a character or their translucent name to see from that rower’s actual seat. Drag in POV to look around; the Rower selector gives access to crowded or off-screen seats. The selected rower’s head is hidden while their paddle/arms remain part of the scene. Names brighten on accepted strokes. Five live camera preview tiles below the main view select the large camera; Auto restores the director. Previews share one WebGL renderer and update at about one frame per second each (less at low quality).
+
 Fullscreen keeps labels, leaderboard, synchronization and timer/finish distance visible. Auto starts with an overview and selects side tracking, chase, bow-facing and finish-line shots. Shots generally last six seconds, with a four-second minimum for an approaching-finish cut. Close battles receive focus. Choosing a boat or shot overrides the director until **Auto** is restored. Camera transitions are smoothed; reduced-motion preferences are respected.
+
+Choose **Adaptive**, **UHD**, or **Performance** in the on-screen Graphics selector. UHD allows up to 8.3 million render pixels (3840 × 2160 at 16:9), subject to viewport shape and adaptive quality; it is not a guarantee of 4K at 60 FPS on every GPU. The FPS and actual render resolution appear beside the controls. Performance caps the pixel budget at one million.
 
 The broadcast uses one active 3D renderer, existing MakeHuman crew and Poly Haven textures/scenery, instanced distant geometry, and adaptive quality targeting 60 FPS with a 30 FPS fallback. It falls back to a live 2D map if graphics fail. Diagnostics are on `#race-river`, including `data-fps`, `data-quality`, `data-render-cost`, `data-camera` and `data-camera-boat`. CPU submission cost is not GPU time.
 
@@ -95,7 +103,7 @@ WEBGL_ANGLE=gl npm run test:e2e
 RENDER_BROADCAST=1 npm run test:load
 ```
 
-The load script defaults to a 900-second window with 50 scripted controllers and a rendered broadcast when `RENDER_BROADCAST=1`. `LOAD_SECONDS`, `RACE_URL` and `LOAD_OUTPUT` configure shorter runs, tunnel measurements and separate reports. Defaults write `artifacts/load-motion.json`. Use `node scripts/measure-latency.mjs` for a separate local/HTTPS HTTP latency comparison; `LATENCY_OUTPUT` selects a report path without overwriting prior measurements. `PHONE_URL` can point the two-phone browser scenario at the tunnel while its admin stays local. Install Playwright browsers and system libraries for browser tests. Local scripted load does not establish physical-phone or venue-network readiness. Android Chrome and iPhone Safari require actual-device checks for calibration, touch, permission, wake/visibility and reconnect behavior.
+The load script defaults to a 900-second window with 50 scripted controllers and a rendered broadcast when `RENDER_BROADCAST=1`. `LOAD_SECONDS`, `RACE_URL` and `LOAD_OUTPUT` configure shorter runs and separate reports. `CONTROLLER_URL` routes the scripted player WebSockets through an HTTPS tunnel while setup API/admin/broadcast stay on `RACE_URL`; `LOAD_FULLSCREEN=1` exercises director layout. Input acknowledgment measures immediate feedback, with the compact status feed as fallback. Defaults write `artifacts/load-motion.json`. Use `node scripts/measure-latency.mjs` for a separate local/HTTPS HTTP latency comparison; `LATENCY_OUTPUT` selects a report path without overwriting prior measurements. `PHONE_URL` can point the two-phone browser scenario at the tunnel while its admin stays local. Install Playwright browsers and system libraries for browser tests. Local scripted load does not establish physical-phone or venue-network readiness. Android Chrome and iPhone Safari require actual-device checks for calibration, touch, permission, wake/visibility and reconnect behavior.
 
 ## Deployment and source
 

@@ -102,16 +102,17 @@ export class Authority {
   const prior=room.memory.get(p.id),now=performance.now(),wall=Date.now();
   if(prior&&input.seq<=prior.seq)return reject();
   room.memory.set(p.id,{...prior,seq:input.seq});
-  // Client corrects its clock using an HTTP round trip. Bound it again at the trust boundary.
+  // Clock-corrected event time is bounded again at the trust boundary.
   if(!Number.isFinite(input.at)||input.at<wall-500||input.at>wall+100||input.at<Math.max(room.inputAfter||0,s.inputAfter||0))return reject();
   const at=Math.min(wall,Math.max(wall-500,input.at));
-  if(prior?.at!=null&&(now-prior.at<STROKE_MS||at-prior.eventAt<STROKE_MS))return reject();
-  p.cadence=prior?.at!=null?Math.round(60000/(now-prior.at)):0;
+  // Enforce cadence on bounded event time; arrival gaps vary with network jitter.
+  if(prior?.eventAt!=null&&at-prior.eventAt<STROKE_MS)return reject();
+  p.cadence=prior?.eventAt!=null?Math.round(60000/(at-prior.eventAt)):0;
   room.memory.set(p.id,{seq:input.seq,at:now,eventAt:at});
   room.recent.push({id:p.id,team:p.team,at});
   room.pending.push({player:p,at,received:wall});
-  p.strokes++;p.lastStroke=wall;p.lastSide=p.side;r.boats[p.team].splash++;
-  const accepted={kind:'stroke',id:p.id,round:r.round,strokes:p.strokes,at:wall,side:p.side,cadence:p.cadence};
+  p.strokes++;p.lastStroke=at;p.lastSide=p.side;r.boats[p.team].splash++;
+  const accepted={kind:'stroke',id:p.id,round:r.round,strokes:p.strokes,at,side:p.side,cadence:p.cadence};
   room.client.event.emit?.(`race_v3-${s.code}/rowing`,accepted);
   room.client.event.emit?.(`race_v3-${s.code}/feedback/${s.id}`,accepted);
  }

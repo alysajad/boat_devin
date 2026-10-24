@@ -1,0 +1,57 @@
+
+Running 1 test using 1 worker
+
+(node:95057) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 game-tests/event.spec.ts:7:5 › solo phones row, pause, release disconnected seats, rematch; broadcast manual cameras and fullscreen (1.2m)
+
+
+  1) game-tests/event.spec.ts:7:5 › solo phones row, pause, release disconnected seats, rematch; broadcast manual cameras and fullscreen
+
+    Error: expect(locator).not.toHaveText(expected) failed
+
+    Locator:  locator('#race-distance')
+    Expected: not "0 m"
+    Received: "0 m"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "not toHaveText" locator('#race-distance') with timeout 5000ms
+      - waiting for locator('#race-distance')
+        14 × locator resolved to <div id="race-distance">0 m</div>
+           - unexpected value "0 m"
+
+
+      10 |  await h.page.locator('[data-action=start]').click();await expect(h.page.locator('#app')).toHaveClass(/broadcast-fullscreen/);await h.page.locator('[data-action=director-exit]').click();await expect(a.page.locator('#phase-label')).toHaveText('RACE IS ON',{timeout:12000});await expect(a.page.locator('.paddle-button')).toHaveCount(1);await expect(a.page.locator('#race-river')).toHaveCount(0);
+      11 |  for(let i=0;i<3;i++){const box=await a.page.locator('.paddle-button').boundingBox();await a.page.mouse.move(box.x+box.width/2,box.y+50);await a.page.mouse.down();await a.page.mouse.move(box.x+box.width/2,box.y+120,{steps:5});await a.page.mouse.up();await a.page.waitForTimeout(760);}
+    > 12 |  await expect(a.page.locator('#race-distance')).not.toHaveText('0 m');await expect(h.page.locator('#race-river')).toHaveAttribute('data-crew-asset','anatomical-rig');
+         |                                                     ^
+      13 |  await h.page.locator('#camera-shot').selectOption('bow');await expect(h.page.locator('#race-river')).toHaveAttribute('data-camera','bow');await h.page.locator('#follow-camera').selectOption('boat-2');await expect(h.page.locator('#race-river')).toHaveAttribute('data-camera-boat','boat-2');await h.page.getByRole('button',{name:'Auto',exact:true}).click();await expect(h.page.locator('#follow-camera')).toHaveValue('');
+      14 |  await h.page.getByRole('button',{name:'Fullscreen',exact:true}).last().click();await expect(h.page.locator('#app')).toHaveClass(/broadcast-fullscreen/);await expect(h.page.locator('#leaderboard')).toBeVisible();await h.page.screenshot({path:'artifacts/motion-broadcast.png'});await h.page.getByRole('button',{name:'Fullscreen',exact:true}).last().click();
+      15 |  await h.page.locator('[data-action=pause]').click();await expect(a.page.locator('#phase-label')).toHaveText('RACE PAUSED');await h.page.locator('[data-action=resume]').click();await expect(a.page.locator('#phase-label')).toHaveText('RACE IS ON',{timeout:10000});
+        at /home/sajad-hussain/Desktop/devin/game-tests/event.spec.ts:12:53
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/event-solo-phones-row-paus-215f3-nual-cameras-and-fullscreen/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/event-solo-phones-row-paus-215f3-nual-cameras-and-fullscreen/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/event-solo-phones-row-paus-215f3-nual-cameras-and-fullscreen/test-failed-3.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/event-solo-phones-row-paus-215f3-nual-cameras-and-fullscreen/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/event-solo-phones-row-paus-215f3-nual-cameras-and-fullscreen/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/event-solo-phones-row-paus-215f3-nual-cameras-and-fullscreen/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    game-tests/event.spec.ts:7:5 › solo phones row, pause, release disconnected seats, rematch; broadcast manual cameras and fullscreen

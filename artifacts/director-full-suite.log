@@ -1,0 +1,22 @@
+
+Running 15 tests using 1 worker
+
+(node:89982) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 game-tests/director.spec.ts:14:5 › director has live previews, clickable seat POV, authoritative stroke labels and fullscreen start/exit (29.0s)
+  ✓   2 game-tests/director.spec.ts:34:5 › director fullscreen fallback can be exited when native fullscreen is refused (2.0s)
+  ✓   3 game-tests/display.spec.ts:2:60 › portrait controller: motion granted, swipe fallback, no 3D downloads (9.5s)
+  ✓   4 game-tests/display.spec.ts:2:60 › portrait controller: motion denied, swipe fallback, no 3D downloads (2.2s)
+  ✓   5 game-tests/display.spec.ts:2:60 › portrait controller: motion missing, swipe fallback, no 3D downloads (1.4s)
+  ✓   6 game-tests/event.spec.ts:7:5 › solo phones row, pause, release disconnected seats, rematch; broadcast manual cameras and fullscreen (37.2s)
+  ✓   7 game-tests/event.spec.ts:20:5 › admin settings, automatic crew growth, move and remove (4.7s)
+  ✓   8 game-tests/event.spec.ts:26:5 › capabilities reject cross-room reads, detailed player feeds, state writes and forged events (967ms)
+  ✓   9 game-tests/event.spec.ts:33:5 › broadcast WebGL refusal keeps the room usable (1.1s)
+  ✓  10 game-tests/event.spec.ts:36:5 › a changed server boot ID ends the old session explicitly (3.7s)
+  ✓  11 game-tests/event.spec.ts:38:5 › swipe practice gives feedback, Ready waits for host, refresh removes the old rower (3.8s)
+  ✓  12 game-tests/event.spec.ts:49:5 › calibrated sideways motion practices in the lobby and propels a racing boat (30.3s)
+  ✓  13 game-tests/network.spec.ts:3:5 › host invite refreshes when moving from Wi-Fi to a hotspot, without changing the room (5.7s)
+  ✓  14 game-tests/network.spec.ts:21:5 › HTTPS tunnel origin is used in the QR while admin stays on localhost (1.3s)
+  ✓  15 game-tests/network.spec.ts:27:5 › host can choose direct Wi-Fi swipe QR or trusted local HTTPS (5.7s)
+
+  15 passed (2.3m)

@@ -15,7 +15,8 @@ function createRig(source:THREE.Group,color:string,own:boolean){
   for(let f=1;f<=5;f++)for(let j=1;j<=3;j++){const b=bones.get(`finger${f}-${j}.${suffix}`);if(b)b.rotation.x=j===1?.35:1.15;}
  }
  const fullGeometry=meshes.map(m=>m.geometry),povGeometry=new Map<THREE.SkinnedMesh,THREE.BufferGeometry>();
- function setFirstPerson(active:boolean){for(const [i,m]of meshes.entries()){
+ let firstPerson=false;
+ function setFirstPerson(active:boolean){if(active===firstPerson)return;firstPerson=active;for(const [i,m]of meshes.entries()){
   if(active&&!povGeometry.has(m)){const g=fullGeometry[i].clone(),p=g.getAttribute('position'),indices=Array.from(g.index!.array),visible:number[]=[];for(let j=0;j<indices.length;j+=3)if(indices.slice(j,j+3).every(v=>p.getY(v)<1.4))visible.push(...indices.slice(j,j+3));g.setIndex(visible);povGeometry.set(m,g);}
   m.geometry=active?povGeometry.get(m)!:fullGeometry[i];
  }}

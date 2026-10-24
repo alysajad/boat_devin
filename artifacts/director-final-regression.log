@@ -1,0 +1,12 @@
+
+Running 5 tests using 1 worker
+
+(node:95496) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 game-tests/director.spec.ts:14:5 › director has live previews, clickable seat POV, authoritative stroke labels and fullscreen start/exit (25.0s)
+  ✓  2 game-tests/director.spec.ts:34:5 › director fullscreen fallback can be exited when native fullscreen is refused (1.8s)
+  ✓  3 game-tests/director.spec.ts:39:5 › clicking a character mesh selects its POV and private feedback cannot be forged or read by another player (3.0s)
+  ✓  4 game-tests/event.spec.ts:7:5 › solo phones row, pause, release disconnected seats, rematch; broadcast manual cameras and fullscreen (33.9s)
+  ✓  5 game-tests/event.spec.ts:49:5 › calibrated sideways motion practices in the lobby and propels a racing boat (26.6s)
+
+  5 passed (1.5m)

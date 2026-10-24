@@ -1,0 +1,132 @@
+local feedback clock delay 2 strokes undefined
+remote error [object ErrorEvent]
+local feedback clock delay 2 strokes undefined
+local feedback clock delay 3 strokes undefined
+local feedback clock delay 2 strokes undefined
+local feedback clock delay 1 strokes undefined
+local feedback clock delay 3 strokes undefined
+remote feedback clock delay 547 strokes undefined
+local feedback clock delay 3 strokes undefined
+local feedback clock delay 4 strokes undefined
+remote feedback clock delay 1338 strokes undefined
+local feedback clock delay 3 strokes undefined
+local feedback clock delay 3 strokes undefined
+remote feedback clock delay 2342 strokes undefined
+remote feedback clock delay 1485 strokes undefined
+remote feedback clock delay 486 strokes undefined
+local feedback clock delay 3 strokes undefined
+local sent 1
+remote sent 1
+local feedback stroke delay 2 strokes 1
+remote feedback clock delay 686 strokes undefined
+local status 1 age 2
+local status 1 age 3
+local feedback clock delay 3 strokes undefined
+local status 1 age 2
+remote feedback stroke delay 691 strokes 1
+remote status 1 age 381
+remote status 1 age 180
+local status 1 age 2
+remote feedback clock delay 347 strokes undefined
+remote status 1 age 45
+local status 1 age 2
+authoritative [ [ 0, 1, 962, 'left', 0 ], [ 1, 1, 962, 'left', 0 ] ]
+local sent 2
+remote sent 2
+local feedback stroke delay 3 strokes 2
+local status 2 age 2
+remote status 1 age 290
+remote status 1 age 90
+local status 2 age 2
+remote feedback stroke delay 367 strokes 2
+local feedback clock delay 3 strokes undefined
+local status 2 age 2
+remote status 2 age 309
+remote status 2 age 109
+local status 2 age 2
+remote status 2 age 134
+local status 2 age 2
+authoritative [ [ 0, 2, 964, 'left', 60 ], [ 1, 2, 964, 'left', 60 ] ]
+local sent 3
+remote sent 3
+local feedback stroke delay 3 strokes 3
+local status 3 age 2
+remote status 2 age 231
+local status 3 age 2
+local feedback clock delay 2 strokes undefined
+local status 3 age 1
+local status 3 age 2
+remote status 2 age 631
+remote status 2 age 431
+remote feedback clock delay 1348 strokes undefined
+remote feedback stroke delay 745 strokes 3
+remote status 3 age 337
+remote status 3 age 138
+remote feedback clock delay 453 strokes undefined
+local status 3 age 2
+authoritative [ [ 0, 3, 964, 'left', 60 ], [ 1, 3, 964, 'left', 60 ] ]
+local sent 4
+remote sent 4
+local feedback stroke delay 4 strokes 4
+local status 4 age 2
+local status 4 age 2
+local feedback clock delay 2 strokes undefined
+remote status 3 age 494
+remote status 3 age 293
+remote status 3 age 156
+local status 4 age 2
+remote status 3 age 161
+local status 4 age 2
+local status 4 age 2
+authoritative [ [ 0, 4, 965, 'left', 60 ], [ 1, 3, 1965, 'left', 60 ] ]
+local sent 5
+remote sent 5
+local feedback stroke delay 3 strokes 5
+local status 5 age 2
+local status 5 age 2
+local feedback clock delay 3 strokes undefined
+local status 5 age 2
+local status 5 age 3
+local status 5 age 2
+authoritative [ [ 0, 5, 965, 'left', 60 ], [ 1, 3, 2967, 'left', 0 ] ]
+local status 5 age 1
+local status 5 age 2
+local feedback clock delay 3 strokes undefined
+remote status 3 age 1798
+remote status 3 age 1598
+remote status 3 age 1398
+remote status 3 age 1197
+local status 5 age 1
+local status 5 age 2
+remote status 3 age 1309
+remote status 3 age 1110
+remote status 3 age 910
+remote status 3 age 709
+remote status 3 age 508
+remote status 3 age 308
+local status 5 age 2
+remote status 3 age 225
+remote feedback clock delay 2545 strokes undefined
+remote feedback clock delay 1546 strokes undefined
+remote feedback clock delay 624 strokes undefined
+remote status 3 age 104
+local status 5 age 2
+local status 5 age 1
+local feedback clock delay 3 strokes undefined
+remote status 3 age 311
+local status 5 age 2
+local status 5 age 2
+local status 5 age 1
+local status 5 age 1
+local status 5 age 1
+local feedback clock delay 3 strokes undefined
+local status 5 age 2
+local status 5 age 2
+remote status 3 age 1436
+remote status 3 age 1236
+remote status 3 age 1036
+remote status 3 age 836
+remote status 3 age 636
+remote status 3 age 437
+local status 5 age 2
+metrics delta { inputs: 10, rejected: 2 }

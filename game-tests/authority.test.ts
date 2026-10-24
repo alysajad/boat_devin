@@ -48,3 +48,15 @@ test('disconnect and explicit leave release slots, revoke sessions and cannot re
 test('disconnect during a race removes the rower but freezes hull, seat positions and normalization',async()=>{
  const c=await room();try{const first=await player(c,'boat-1'),remaining=await player(c,'boat-1');await player(c,'boat-2');start(c);const before={...c.r.race.boats['boat-1']};c.a.stroke(first,input());c.a.leave(first);assert.equal(c.r.pending.length,0);assert.equal(c.r.race.players.find((p:any)=>p.id===remaining.id).seat,1);assert.equal(c.r.race.boats['boat-1'].crewCount,2);assert.equal(c.r.race.boats['boat-1'].length,before.length);const late=await player(c,'boat-1');assert.equal(late.waiting,true);c.a.leave(late);c.a.command(c.admin,{action:'reset'});assert.equal(c.r.race.boats['boat-1'].crewCount,1);assert.equal(c.r.race.players.length,2);}finally{c.a.close();}
 });
+
+test('only accepted strokes emit immediate private and broadcast feedback with authoritative time',async()=>{
+ const sent:any[]=[],transport={...client,event:{subscribe(){},emit(name:string,data:any){sent.push({name,data});}}};const a=new Authority(),admin=await a.create(transport);
+ try{const sessions=[];for(const team of ['boat-1','boat-2']){const s=await a.join(transport,admin.code,'player','Rower',team);a.connection(`race_v3-${s.code}/${s.id}`,true);a.command(s,{action:'controller',mode:'swipe'});a.command(s,{action:'ready',ready:true});sessions.push(s);}a.command(admin,{action:'start'});for(let i=0;i<301;i++)a.step(1/60);const s=sessions[0],at=Date.now();a.stroke(s,{...input(),at});assert.equal(sent.length,2);assert.equal(sent[0].name,`race_v3-${s.code}/rowing`);assert.equal(sent[1].name,`race_v3-${s.code}/feedback/${s.id}`);assert.equal(sent[0].data.strokes,1);assert.equal(sent[0].data.id,s.id);assert.ok(sent[0].data.at>=at);a.stroke(s,input());assert.equal(sent.length,2);}finally{a.close();}
+});
+
+test('bounded event timestamps preserve 700 ms cadence through compressed network arrival gaps',async()=>{
+ const c=await room();try{const s=await player(c,'boat-1');await player(c,'boat-2');start(c);const p=c.r.race.players.find((p:any)=>p.id===s.id),wall=Date.now();c.r.inputAfter=wall-2000;s.inputAfter=wall-2000;
+ c.r.memory.set(s.id,{seq:1,at:performance.now()-550,eventAt:wall-800});c.a.stroke(s,{...input(2),at:wall-50});assert.equal(p.strokes,1);assert.equal(p.lastStroke,wall-50);assert.equal(p.cadence,80);
+ c.a.stroke(s,{...input(3),at:wall});assert.equal(p.strokes,1);c.a.stroke(s,{...input(4),at:wall+2000});assert.equal(p.strokes,1);c.a.stroke(s,{...input(5),at:wall-2000});assert.equal(p.strokes,1);
+ }finally{c.a.close();}
+});

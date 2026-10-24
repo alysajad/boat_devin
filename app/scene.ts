@@ -1,13 +1,13 @@
 import { Director } from './director';
 import * as THREE from 'three';
 import {KTX2Loader} from 'three/addons/loaders/KTX2Loader.js';
-import { crewSeatZ, type Race, type Team, type Player, type Side } from './race-v2';
+import { crewSeatZ, rankings, type Race, type Team, type Player, type Side } from './race-v2';
 import { loadCrew, createCrew } from './crew';
 import { HULL, LOG_HALF_LENGTH, LOG_RADIUS, WATER_LEVEL } from './world';
 import { createScenery, type SceneQuality } from './scenery';
 import { paddlePose, waterHeight, STROKE_SECONDS, PADDLE_LEAN } from './rowing';
 
-type Options = { getRace: () => Race | null; playerId?: string; view: 'player' | 'broadcast'; followBoat?: () => string; cameraMode?: () => string; onFallback?: (reason: string) => void };
+type Options = { getRace: () => Race | null; playerId?: string; view: 'player' | 'broadcast'; followBoat?: () => string; cameraMode?: () => string; povPlayer?:()=>string;selectPlayer?:(id:string)=>void;serverNow?:()=>number;graphics?:()=>string;previewRoot?:HTMLElement;onFallback?: (reason: string) => void };
 
 
 /** World metres match the simulation: +x is right, forward is -z. */
@@ -26,6 +26,10 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   let renderer: THREE.WebGLRenderer | undefined;
   let compressed: KTX2Loader | undefined;
   let observer: ResizeObserver | undefined;
+  let previewTarget:THREE.WebGLRenderTarget|undefined,removePicking=()=>{};
+  let graphicsPreference=options.graphics?.()||'auto';
+  const selectedPlayer=()=>options.povPlayer?.()||(options.view==='player'?options.playerId:'');
+  const serverNow=()=>options.serverNow?.()??Date.now();
   const geometries = new Set<THREE.BufferGeometry>();
   const materials = new Set<THREE.Material>();
   const reducedQuery = matchMedia('(prefers-reduced-motion: reduce)');
@@ -49,6 +53,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
 
   function releaseGPU() {
     cancelAnimationFrame(frame);
+    removePicking();previewTarget?.dispose();previewTarget=undefined;
     observer?.disconnect();
     renderer?.domElement.removeEventListener('webglcontextlost', contextLost);
     renderer?.domElement.remove();
@@ -141,10 +146,11 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   const resize = () => {
     const width = Math.max(1, element.clientWidth), height = Math.max(1, element.clientHeight);
     const dprCap = quality === 'low' ? 1 : quality === 'medium' ? 1.25 : mobile ? 1.5 : 2;
-    const pixelBudget = mobile ? 850000 : 1800000;
-    renderer!.setPixelRatio(Math.min(devicePixelRatio || 1, dprCap, Math.sqrt(pixelBudget / (width * height))));
+    const pixelBudget = graphicsPreference==='performance'?1000000:quality==='low'?1000000:quality==='medium'?1800000:graphicsPreference==='uhd'?8294400:mobile?850000:3000000;
+    renderer!.setPixelRatio(Math.min(graphicsPreference==='uhd'?2:devicePixelRatio||1,graphicsPreference==='performance'?1:dprCap,Math.sqrt(pixelBudget/(width*height))));
     element.dataset.pixelRatio = String(renderer!.getPixelRatio());
     renderer!.setSize(width, height, false);
+    element.dataset.resolution=`${renderer!.domElement.width}×${renderer!.domElement.height}`;
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
   };
@@ -401,6 +407,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   let lastRound = -1, rosterKey = '', lastTime = performance.now(), fpsTime = lastTime, fpsFrames = 0;
   const director=new Director(),aim=new THREE.Vector3(),projected=new THREE.Vector3();
   const labels=document.createElement('div');labels.className='boat-labels';element.append(labels);
+  const rowerLabels=new Map<string,HTMLButtonElement>();
   const labelMap=new Map(teams.map(id=>{const label=document.createElement('span');label.className='boat-label';label.textContent=initial.config.find(c=>c.id===id)!.name;label.style.borderColor=initial.config.find(c=>c.id===id)!.color;labels.append(label);return[id,label];}));
   const finish=new THREE.Mesh(new THREE.BoxGeometry(initial.riverWidth-10,.07,.3),new THREE.MeshBasicMaterial({color:0xf8eed0}));scene.add(finish);geometries.add(finish.geometry);materials.add(finish.material);
   const cameraPoint = new THREE.Vector3(), cameraTarget = new THREE.Vector3();
@@ -411,6 +418,9 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     const nextKey = `${race.round}:` + race.players.map(p => `${p.id}/${p.team}/${p.side}`).join(',');
     if (nextKey === rosterKey) return;
     rosterKey = nextKey;
+    for(const [id,label]of rowerLabels)if(!race.players.some(p=>p.id===id)){label.remove();rowerLabels.delete(id);}
+    for(const p of race.players){let label=rowerLabels.get(p.id);if(!label){label=document.createElement('button');label.className='rower-label';label.dataset.player=p.id;label.addEventListener('click',()=>options.selectPlayer?.(p.id));labels.append(label);rowerLabels.set(p.id,label);}label.textContent=p.name;label.setAttribute('aria-label',`POV: ${p.name}`);label.style.setProperty('--rower-color',race.config.find(c=>c.id===p.team)!.color);}
+
     for (const team of teams) {
       const players = race.players.filter(p => p.team === team);
       boats[team].crew.forEach((crew, i) => {
@@ -421,7 +431,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
         crew.root.position.set(race.boats[team].crewCount===1?0:crew.side * .22, 0, crewSeatZ(i, race.boats[team].crewCount));
 
         crew.strokes = player?.strokes ?? 0;
-        crew.at = now - 1000;
+        crew.at = player?.strokes?now-Math.max(0,serverNow()-player.lastStroke):-Infinity;
       });
     }
     const player = race.players.find(p => p.id === options.playerId);
@@ -430,10 +440,10 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
       element.dataset.side = player.side;
     } else { delete element.dataset.seat; delete element.dataset.side; }
   }
-  function pose(crew: Crew, player: Player | undefined, now: number) {
-    const own = options.view === 'player' && crew.playerId === options.playerId;
+  function pose(crew: Crew, player: Player | undefined, now: number, detailed=true) {
+    const own = crew.playerId === selectedPlayer();
     if (player && player.strokes !== crew.strokes) {
-      if (player.strokes > crew.strokes && !(own && now < predictionUntil && player.strokes <= predictionCount)) crew.at = now-Math.max(0,Date.now()-player.lastStroke);
+      if (player.strokes > crew.strokes && !(own && now < predictionUntil && player.strokes <= predictionCount)) crew.at = now-Math.max(0,serverNow()-player.lastStroke);
       crew.strokes = player.strokes;
     }
     if(player && options.getRace()!.boats[player.team].crewCount===1)crew.side=(own?(localSide||player.lastSide):player.lastSide)==='right'?1:-1;
@@ -443,6 +453,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     // Feather the blade through recovery; its working face pushes water during the drive.
     crew.paddle.rotation.set(stroke.pitch, stroke.active && !stroke.drive ? Math.sin(Math.PI * age / STROKE_SECONDS) * .7 : 0, crew.side * PADDLE_LEAN);
     crew.paddle.updateMatrix();
+    if(detailed){
     const shoulders:THREE.Vector3[]=[], hands:THREE.Vector3[]=[];
     for (let i = 0; i < 2; i++) {
       armA.set(i ? .22 : -.22, own ? 1.06 : 1.17, -.04);
@@ -451,6 +462,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
       shoulders.push(armA.clone());hands.push(armB.clone());
     }
     crew.model?.pose(shoulders,hands);
+    }
     bladePoint.set(0,-1.2,0).applyMatrix4(crew.paddle.matrix);
     if(own){element.dataset.strokePhase=stroke.drive?'drive':stroke.active?'recovery':'ready';element.dataset.bladeHeight=bladePoint.y.toFixed(3);}
     crew.splash.visible = stroke.drive;
@@ -459,6 +471,54 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
       drop.position.set(bladePoint.x + Math.sin(i * 3) * .14, WATER_LEVEL + (reduced ? .035 : Math.sin(life * Math.PI) * (.16 + i * .035)), bladePoint.z + Math.cos(i * 4) * .12);
       drop.scale.setScalar(Math.max(0, 1 - life) * .055);
     });
+  }
+  function setPOV(cam:THREE.PerspectiveCamera,player:Player,race:Race){
+    const boat=boats[player.team];
+    if(cam.fov!==72){cam.fov=72;cam.updateProjectionMatrix();}
+    cameraPoint.set(race.boats[player.team].crewCount===1?0:(player.side==='left'?-1:1)*.22,1.38,crewSeatZ(player.seat,race.boats[player.team].crewCount)+.035);
+    boat.root.updateMatrixWorld(true);cam.position.copy(boat.root.localToWorld(cameraPoint));boat.root.getWorldQuaternion(boatQuaternion);
+    lookEuler.set(pitch-.13,yaw,0);lookQuaternion.setFromEuler(lookEuler);cam.quaternion.copy(boatQuaternion).multiply(lookQuaternion);
+  }
+  function setShot(cam:THREE.PerspectiveCamera,shot:string,boatId:string,race:Race,blend=1){
+    if(cam.fov!==50){cam.fov=50;cam.updateProjectionMatrix();}
+    const target=boats[boatId]||boats[teams[0]],tracked=Object.values(boats);
+    const midpoint=tracked.reduce((sum,b)=>sum+b.distance,0)/tracked.length,centerX=tracked.reduce((sum,b)=>sum+b.x,0)/tracked.length;
+    const separation=Math.max(...tracked.map(b=>b.distance))-Math.min(...tracked.map(b=>b.distance));
+    if(cam===camera){(scene.fog as THREE.Fog).near=65+separation*.7;(scene.fog as THREE.Fog).far=190+separation*.9;}
+    const width=Math.max(14,Math.max(...tracked.map(b=>b.x))-Math.min(...tracked.map(b=>b.x))+12),spread=Math.max(20,separation+15,width/cam.aspect);
+    cameraPoint.set(centerX+8,15+spread*.46,-midpoint+18+spread*.38);cameraTarget.set(centerX,0,-midpoint-2);let anchor=midpoint;
+    if(shot!=='overview'){
+      anchor=target.distance;cameraTarget.set(target.x,0,-target.distance);const length=race.boats[boatId]?.length||6;
+      if(shot==='side')cameraPoint.set(target.x+20,9,-target.distance+3);
+      if(shot==='chase')cameraPoint.set(target.x+4,7,-target.distance+length*.5+12);
+      if(shot==='bow')cameraPoint.set(target.x+3,4,-target.distance-length*.5-12);
+      if(shot==='finish'){cameraPoint.set(race.riverWidth*.4,12,-race.settings.distance-5);cameraTarget.set(0,0,-race.settings.distance+8);anchor=race.settings.distance;}
+    }
+    cam.position.lerp(cameraPoint,blend);if(cam===camera){aim.lerp(cameraTarget,blend);cam.lookAt(aim);}else cam.lookAt(cameraTarget);
+    return anchor;
+  }
+  const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();let down:{x:number;y:number;lastX:number;lastY:number}|undefined;
+  const pointerDown=(event:PointerEvent)=>{if(event.button!==0)return;down={x:event.clientX,y:event.clientY,lastX:event.clientX,lastY:event.clientY};renderer!.domElement.setPointerCapture(event.pointerId);};
+  const pointerMove=(event:PointerEvent)=>{if(!down||!selectedPlayer())return;controls.setLook(yaw-(event.clientX-down.lastX)*.004,pitch-(event.clientY-down.lastY)*.004);down.lastX=event.clientX;down.lastY=event.clientY;};
+  const pointerUp=(event:PointerEvent)=>{const start=down;down=undefined;if(!start||Math.hypot(event.clientX-start.x,event.clientY-start.y)>6)return;const rect=element.getBoundingClientRect();pointer.set((event.clientX-rect.left)/rect.width*2-1,1-(event.clientY-rect.top)/rect.height*2);raycaster.setFromCamera(pointer,camera);
+    const targets=Object.values(boats).flatMap(b=>b.crew).filter(c=>c.root.visible);const hit=raycaster.intersectObjects(targets.map(c=>c.root),true)[0];if(!hit)return;let object:THREE.Object3D|null=hit.object;while(object){const crew=targets.find(c=>c.root===object);if(crew){options.selectPlayer?.(crew.playerId);return;}object=object.parent;}
+  };
+  const pointerCancel=()=>{down=undefined;};
+  renderer.domElement.addEventListener('pointerdown',pointerDown);renderer.domElement.addEventListener('pointermove',pointerMove);renderer.domElement.addEventListener('pointerup',pointerUp);renderer.domElement.addEventListener('pointercancel',pointerCancel);
+  removePicking=()=>{renderer?.domElement.removeEventListener('pointerdown',pointerDown);renderer?.domElement.removeEventListener('pointermove',pointerMove);renderer?.domElement.removeEventListener('pointerup',pointerUp);renderer?.domElement.removeEventListener('pointercancel',pointerCancel);};
+  const previewCamera=new THREE.PerspectiveCamera(50,240/135,.045,1000),pixels=new Uint8Array(240*135*4);
+  let previewBusy=false,previewAt=0,previewIndex=0,labelsAt=0;
+  if(options.previewRoot){previewTarget=new THREE.WebGLRenderTarget(240,135);previewTarget.texture.colorSpace=THREE.SRGBColorSpace;}
+  function updatePreview(now:number,race:Race){
+    if(!previewTarget||previewBusy||now<previewAt||!options.previewRoot?.isConnected)return;
+    const canvases=options.previewRoot.querySelectorAll<HTMLCanvasElement>('canvas[data-preview]');if(!canvases.length)return;
+    const canvas=canvases[previewIndex++%canvases.length];
+    previewAt=now+(quality==='low'?500:200);previewBusy=true;
+    const selected=race.players.find(p=>p.id===selectedPlayer()),own=selected?boats[selected.team].crew.find(c=>c.playerId===selected.id):undefined;
+    own?.model?.setFirstPerson(false);setShot(previewCamera,canvas.dataset.preview!,options.followBoat?.()||rankings(race)[0],race);previewCamera.updateMatrixWorld();
+    const skyPosition=skyDome.position.clone();skyDome.position.copy(previewCamera.position);
+    renderer!.setRenderTarget(previewTarget);renderer!.render(scene,previewCamera);renderer!.setRenderTarget(null);skyDome.position.copy(skyPosition);own?.model?.setFirstPerson(true);
+    void renderer!.readRenderTargetPixelsAsync(previewTarget,0,0,240,135,pixels).then(()=>{if(disposed||failed)return;canvas.getContext('2d')?.putImageData(new ImageData(new Uint8ClampedArray(pixels),240,135),0,0);canvas.dataset.frame=String(now);}).catch(()=>{if(!disposed)canvas.dataset.unavailable='true';}).finally(()=>{previewBusy=false;});
   }
   function render(now: number) {
     if (disposed || failed || document.hidden) return;
@@ -471,16 +531,18 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     const costStart = performance.now();
     const race = options.getRace();
     if (!race) { renderer!.render(scene, camera); return; }
+    const preference=options.graphics?.()||'auto';if(preference!==graphicsPreference){graphicsPreference=preference;quality=preference==='performance'?'medium':'high';slowWindows=fastWindows=0;resize();}
     const reset = race.round !== lastRound;
     if (reset) { localStrokeAt = -Infinity; predictionCount = 0; predictionUntil = 0; preview = 0; }
     syncRoster(race, now);
-    const ease = reduced || reset ? 1 : 1 - Math.exp(-Math.min(elapsed, 100) / 80);
+    const ease = reduced || reset ? 1 : 1 - Math.exp(-Math.min(elapsed, 100) / 50);
     let animatedCrew=0;
     for (const team of teams) {
       const b = boats[team], state = race.boats[team];
       const boatEase = state.collisions > b.collisions ? 1 : ease;
       b.x += (state.x - b.x) * boatEase;
-      b.distance += (state.distance - b.distance) * boatEase;
+      const ahead=race.phase==='racing'?Math.min(.1,Math.max(0,(serverNow()-race.serverTime)/1000)):0;
+      b.distance += (state.distance+state.speed*ahead-b.distance)*boatEase;
       b.heading += Math.atan2(Math.sin(state.heading-b.heading),Math.cos(state.heading-b.heading)) * boatEase;
       b.root.position.set(b.x, 0, -b.distance);
       b.root.rotation.set(0,-b.heading,0);
@@ -501,57 +563,35 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
       b.collision.visible = now - b.collisionAt < 450;
       element.dataset.collision = teams.some(t => now - boats[t].collisionAt < 450) ? 'true' : 'false';
       b.wake.scale.set(1, 1, .6 + state.speed * .12);
-      const localTeam=race.players.find(p=>p.id===options.playerId)?.team;
+      const localTeam=race.players.find(p=>p.id===selectedPlayer())?.team;
       const animate=options.view==='broadcast'||team===localTeam||Math.abs(state.distance-race.boats[localTeam??teams[0]].distance)<45;
-      for (const crew of b.crew) {const own=crew.playerId===options.playerId;const nearby=Math.abs(crew.root.position.z+(localTeam===team?0:state.distance-race.boats[localTeam??teams[0]].distance))<12;
+      for (const crew of b.crew) {const own=crew.playerId===selectedPlayer();const nearby=Math.abs(crew.root.position.z+(localTeam===team?0:state.distance-race.boats[localTeam??teams[0]].distance))<12;
         const detailed=crew.root.visible && animate && (own || (nearby && animatedCrew<(quality==='low'?6:12)-(options.view==='player'?1:0)));crew.model?.setDetail(detailed);
-        if(detailed){pose(crew,race.players.find(p=>p.id===crew.playerId),now);animatedCrew++;}else crew.splash.visible=false;}
+        crew.model?.setFirstPerson(own);if(crew.root.visible)pose(crew,race.players.find(p=>p.id===crew.playerId),now,detailed);if(detailed)animatedCrew++;}
     }
-    const player = race.players.find(p => p.id === options.playerId);
+    const player = race.players.find(p => p.id === selectedPlayer());
     const leaderDistance = Math.max(...teams.map(id=>boats[id].distance));
     let anchor = leaderDistance;
-    if (options.view === 'player' && player) {
-      const boat = boats[player.team];
-      const seat = race.players.filter(p => p.team === player.team).findIndex(p => p.id === player.id);
-      // Eye position is at the seated player's head, inside the actual hull.
-      cameraPoint.set(race.boats[player.team].crewCount===1?0:(player.side === 'left' ? -1 : 1) * .22, 1.38, crewSeatZ(seat, race.boats[player.team].crewCount) + .035);
-      boat.root.updateMatrixWorld(true);
-      camera.position.copy(boat.root.localToWorld(cameraPoint));
-      boat.root.getWorldQuaternion(boatQuaternion);
-      lookEuler.set(pitch - .13, yaw, 0);
-      lookQuaternion.setFromEuler(lookEuler);
-      camera.quaternion.copy(boatQuaternion).multiply(lookQuaternion);
-      anchor = boat.distance;
-    } else {
-      const shot=director.select(race,now,options.cameraMode?.(),options.followBoat?.());
+    if(player){
+      setPOV(camera,player,race);anchor=boats[player.team].distance;
+      element.dataset.camera='pov';element.dataset.cameraBoat=player.team;element.dataset.cameraPlayer=player.id;
+    }else{
+      delete element.dataset.cameraPlayer;
+      const shot=director.select(race,now,options.cameraMode?.()==='pov'?'auto':options.cameraMode?.(),options.followBoat?.());
       element.dataset.camera=shot.shot;element.dataset.cameraBoat=shot.boat;
-      const target=boats[shot.boat]||boats[teams[0]],tracked=Object.values(boats);
-      const midpoint=tracked.reduce((sum,b)=>sum+b.distance,0)/tracked.length;
-      const centerX=tracked.reduce((sum,b)=>sum+b.x,0)/tracked.length;
-      const separation=Math.max(...tracked.map(b=>b.distance))-Math.min(...tracked.map(b=>b.distance));
-      const width=Math.max(14,Math.max(...tracked.map(b=>b.x))-Math.min(...tracked.map(b=>b.x))+12);
-      const spread=Math.max(20,separation+15,width/camera.aspect);
-      (scene.fog as THREE.Fog).near=65+separation*.7;(scene.fog as THREE.Fog).far=190+separation*.9;
-      cameraPoint.set(centerX+8,15+spread*.46,-midpoint+18+spread*.38);cameraTarget.set(centerX,0,-midpoint-2);anchor=midpoint;
-      if(shot.shot!=='overview'){
-       anchor=target.distance;cameraTarget.set(target.x,0,-target.distance);
-       const length=race.boats[shot.boat]?.length||6;
-       if(shot.shot==='side')cameraPoint.set(target.x+20,9,-target.distance+3);
-       if(shot.shot==='chase')cameraPoint.set(target.x+4,7,-target.distance+length*.5+12);
-       if(shot.shot==='bow')cameraPoint.set(target.x+3,4,-target.distance-length*.5-12);
-       if(shot.shot==='finish'){cameraPoint.set(race.riverWidth*.4,12,-race.settings.distance-5);cameraTarget.set(0,0,-race.settings.distance+8);anchor=race.settings.distance;}
-      }
-      const blend=reduced||reset?1:1-Math.exp(-elapsed/650);
-      camera.position.lerp(cameraPoint,blend);aim.lerp(cameraTarget,blend);camera.lookAt(aim);
+      anchor=setShot(camera,shot.shot,shot.boat,race,reduced||reset?1:1-Math.exp(-elapsed/400));
     }
     finish.visible=race.settings.format==='distance';finish.position.set(0,.06,-race.settings.distance);
     camera.updateMatrixWorld();
+    if(now>=labelsAt){labelsAt=now+80;
+    for(const p of race.players){const label=rowerLabels.get(p.id)!,crew=boats[p.team]?.crew.find(c=>c.playerId===p.id);if(!crew){label.hidden=true;continue;}crew.root.getWorldPosition(projected);projected.y+=1.65;projected.project(camera);label.hidden=p.id===selectedPlayer()||Math.abs(projected.x)>1||Math.abs(projected.y)>1||Math.abs(projected.z)>1;label.style.left=`${(projected.x+1)*50}%`;label.style.top=`${(1-projected.y)*50}%`;label.dataset.active=String(p.strokes>0&&serverNow()-p.lastStroke<350);label.dataset.strokes=String(p.strokes);}
     for(const [id,label]of labelMap){const b=boats[id];projected.set(b.x,2.5,-b.distance).project(camera);label.hidden=projected.z>1||projected.z< -1;label.style.left=`${Math.max(6,Math.min(94,(projected.x+1)*50))}%`;label.style.top=`${Math.max(6,Math.min(90,(1-projected.y)*50))}%`;}
 
+    }
     skyDome.position.copy(camera.position);
     water.position.z=-anchor-(options.view==='player'?150:0); bankGround.position.z=water.position.z;
     const fogDistance=quality==='low'?70:110;
-    if(options.view==='player'){(scene.fog as THREE.Fog).near=fogDistance*.45;(scene.fog as THREE.Fog).far=fogDistance;}
+    if(player){(scene.fog as THREE.Fog).near=fogDistance*.45;(scene.fog as THREE.Fog).far=fogDistance;}
     scenery!.update(anchor,quality,race.seed,teams.map(team=>boats[team].distance));
     element.dataset.activeChunks=String(scenery!.activeChunks);
     element.dataset.chunkKeys=scenery!.chunkKeys;
@@ -564,6 +604,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     waterMaterial.uniforms.fogNear.value=(scene.fog as THREE.Fog).near;
     waterMaterial.uniforms.fogFar.value=(scene.fog as THREE.Fog).far;
     renderer!.render(scene, camera);
+    updatePreview(now,race);
     element.dataset.animatedCrew=String(animatedCrew);element.dataset.renderFrames=String(++renderFrames);
     element.dataset.residentInstances=String(scenery!.residentInstances+dynamicBatches.capacity+logBatches.capacity);
     costTotal+=performance.now()-costStart;
@@ -593,12 +634,12 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   void loadCrew().then(async source=>{
     if(disposed||failed)return;
     for(const team of teams)for(const crew of boats[team].crew){
-      const player=options.getRace()?.players.filter(p=>p.team===team)[boats[team].crew.indexOf(crew)];
+      const player=options.getRace()?.players.find(p=>p.team===team&&p.seat===boats[team].crew.indexOf(crew));
       const own=player?.id===options.playerId && options.view==='player';
       crew.model=createCrew(source,initial.config.find(c=>c.id===team)!.color,own);crewModels.push(crew.model);crew.root.add(crew.model.root);
       pose(crew,options.getRace()?.players.find(p=>p.id===crew.playerId),performance.now());
     }
-    element.dataset.crewAsset='anatomical-rig';await Promise.all([...surfaceLoads,scenery?.ready]);if(disposed||failed)return;await renderer!.compileAsync(scene,camera);if(!disposed&&!failed)resolveReady();
+    element.dataset.crewAsset='anatomical-rig';await Promise.all([...surfaceLoads,scenery?.ready]);if(disposed||failed)return;await renderer!.compileAsync(scene,camera);if(disposed||failed)return;if(previewTarget){renderer!.setRenderTarget(previewTarget);const warming=renderer!.compileAsync(scene,previewCamera);renderer!.setRenderTarget(null);await warming;}if(!disposed&&!failed){lastTime=fpsTime=performance.now();fpsFrames=costTotal=slowWindows=fastWindows=0;quality=graphicsPreference==='performance'||mobile?'medium':'high';resize();resolveReady();}
   }).catch(error=>{console.error('Crew asset:',error);useFallback('Crew assets could not load. Showing the live river map; reload to retry 3D.');});
   document.addEventListener('visibilitychange',onVisibility);
   if(!document.hidden) frame = requestAnimationFrame(render);
