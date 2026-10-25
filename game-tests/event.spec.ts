@@ -24,10 +24,10 @@ test('admin settings, automatic crew growth, move and remove',async({browser})=>
  }finally{await a?.context.close();await b?.context.close();await h.context.close();}
 });
 test('capabilities reject cross-room reads, detailed player feeds, state writes and forged events',async()=>{
- const admin=await api('create',{}),other=await api('create',{}),s=await api('join',{code:admin.code,name:'Security',team:'boat-1'});const c=new DeepstreamClient(url.replace(/^http/,'ws')+'/deepstream'),errors:string[]=[];c.on('error',e=>errors.push(String(e)));await c.login({username:`race_v3-${s.code}/${s.id}`,token:s.token});
+ const admin=await api('create',{}),other=await api('create',{}),s=await api('join',{code:admin.code,name:'Security',team:'boat-1'});const c=new DeepstreamClient(url.replace(/^http/,'ws')+'/deepstream'),errors:string[]=[];c.on('error',e=>errors.push(String(e)));await c.login({username:`race_v4-${s.code}/${s.id}`,token:s.token});
  try{
  await expect(api('command',{action:'start'},s)).rejects.toThrow(/admin/);
- const record=c.record.getRecord(`race_v3-${s.code}/race`);record.on('error',e=>errors.push(String(e)));await record.whenReady();record.set('remaining',999);c.event.emit(`race_v3-${s.code}/stroke/not-me`,{seq:1,round:1,mode:'swipe',at:Date.now()});const cross=c.record.getRecord(`race_v3-${other.code}/race`);cross.on('error',e=>errors.push(String(e)));const detailed=c.record.getRecord(`race_v3-${s.code}/snapshot`);detailed.on('error',e=>errors.push(String(e)));await new Promise(r=>setTimeout(r,500));expect(errors.length).toBeGreaterThanOrEqual(4);expect(cross.isReady).toBe(false);expect(detailed.isReady).toBe(false);
+ const record=c.record.getRecord(`race_v4-${s.code}/race`);record.on('error',e=>errors.push(String(e)));await record.whenReady();record.set('remaining',999);c.event.emit(`race_v4-${s.code}/stroke/not-me`,{seq:1,round:1,mode:'swipe',at:Date.now()});const cross=c.record.getRecord(`race_v4-${other.code}/race`);cross.on('error',e=>errors.push(String(e)));const detailed=c.record.getRecord(`race_v4-${s.code}/snapshot`);detailed.on('error',e=>errors.push(String(e)));await new Promise(r=>setTimeout(r,500));expect(errors.length).toBeGreaterThanOrEqual(4);expect(cross.isReady).toBe(false);expect(detailed.isReady).toBe(false);
  }finally{c.close();}
 });
 test('broadcast WebGL refusal keeps the room usable',async({browser})=>{

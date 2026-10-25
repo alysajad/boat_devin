@@ -32,18 +32,19 @@ function createRig(source:THREE.Group,color:string,own:boolean){
   const across=index.sub(pinky).normalize();
   const forward=new THREE.Vector3().fromArray(bones.get('finger3-1.'+suffix)!.userData.head).sub(wristHead);forward.addScaledVector(across,-across.dot(forward)).normalize();
   const back=new THREE.Vector3().crossVectors(across,forward).normalize();
-  const shaftCenter=forward.clone().multiplyScalar(.07).addScaledVector(back,-.025);
+  const shaftCenter=forward.clone().multiplyScalar(.09).addScaledVector(back,-.018);
   root.updateMatrixWorld(true);
   for(let f=1;f<=5;f++){
    const first=bones.get(`finger${f}-1.${suffix}`);if(!first)continue;
    const start=new THREE.Vector3().fromArray(first.userData.head).sub(wristHead);
    const center=shaftCenter.clone().addScaledVector(across,start.dot(across));
-   const radial=start.clone().sub(center),radius=Math.max(.024,Math.hypot(radial.dot(forward),radial.dot(back)));
+   const radial=start.clone().sub(center);let radius=Math.hypot(radial.dot(forward),radial.dot(back));
    let angle=Math.atan2(radial.dot(back),radial.dot(forward));
    for(let j=1;j<=3;j++){
     const bone=bones.get(`finger${f}-${j}.${suffix}`);if(!bone)continue;
     const restDirection=new THREE.Vector3().fromArray(bone.userData.tail).sub(new THREE.Vector3().fromArray(bone.userData.head));
-    angle-=(f===1?-1:1)*2*Math.asin(Math.min(.95,restDirection.length()/(2*radius)));
+    const length=restDirection.length(),nextRadius=Math.max(.024,radius-length*.85);
+    angle-=(f===1?-1:1)*Math.acos(THREE.MathUtils.clamp((radius*radius+nextRadius*nextRadius-length*length)/(2*radius*nextRadius),-1,1));radius=nextRadius;
     const end=center.clone().addScaledVector(forward,Math.cos(angle)*radius).addScaledVector(back,Math.sin(angle)*radius);
     const q=new THREE.Quaternion().setFromUnitVectors(restDirection.normalize(),end.clone().sub(start).normalize());
     bone.parent!.updateWorldMatrix(true,false);const parentQ=bone.parent!.getWorldQuaternion(new THREE.Quaternion());
@@ -53,10 +54,11 @@ function createRig(source:THREE.Group,color:string,own:boolean){
   }
 
  }
+ const cameraBones=new Set<THREE.Bone>();bones.get('neck01')!.traverse(o=>{if(o instanceof THREE.Bone)cameraBones.add(o);});
  const fullGeometry=meshes.map(m=>m.geometry),povGeometry=new Map<THREE.SkinnedMesh,THREE.BufferGeometry>();
  let firstPerson=false;
  function setFirstPerson(active:boolean){if(active===firstPerson)return;firstPerson=active;eyes.forEach(e=>e.visible=!active);for(const [i,m]of meshes.entries()){
-  if(active&&!povGeometry.has(m)){const g=fullGeometry[i].clone(),p=g.getAttribute('position'),indices=Array.from(g.index!.array),visible:number[]=[];for(let j=0;j<indices.length;j+=3)if(indices.slice(j,j+3).every(v=>p.getY(v)<1.4))visible.push(...indices.slice(j,j+3));g.setIndex(visible);povGeometry.set(m,g);}
+  if(active&&!povGeometry.has(m)){const g=fullGeometry[i].clone(),indices=Array.from(g.index!.array),visible:number[]=[];for(let j=0;j<indices.length;j+=3)if(indices.slice(j,j+3).every(v=>{const skin=g.getAttribute('skinIndex'),weights=g.getAttribute('skinWeight');let headWeight=0;for(let k=0;k<4;k++)if(cameraBones.has(m.skeleton.bones[skin.getComponent(v,k)]))headWeight+=weights.getComponent(v,k);return headWeight<.5;}))visible.push(...indices.slice(j,j+3));g.setIndex(visible);povGeometry.set(m,g);}
   m.geometry=active?povGeometry.get(m)!:fullGeometry[i];
  }}
  setFirstPerson(own);
@@ -72,31 +74,66 @@ function createRig(source:THREE.Group,color:string,own:boolean){
   const y=new THREE.Vector3().fromArray(bones.get('finger3-1.'+suffix)!.userData.head).sub(new THREE.Vector3().fromArray(bones.get('wrist.'+suffix)!.userData.head));y.addScaledVector(x,-x.dot(y)).normalize();
   return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x,y,new THREE.Vector3().crossVectors(x,y))).invert();
  });
+ const anatomy=['L','R'].map(suffix=>{
+  const length=(name:string)=>new THREE.Vector3().fromArray(bones.get(name+'.'+suffix)!.userData.tail).distanceTo(new THREE.Vector3().fromArray(bones.get(name+'.'+suffix)!.userData.head));
+  const upper1=length('upperarm01'),upper2=length('upperarm02'),lower1=length('lowerarm01'),lower2=length('lowerarm02');
+  const shoulder=new THREE.Vector3().fromArray(bones.get('upperarm01.'+suffix)!.userData.head);shoulder.y+=pelvis.position.y-new THREE.Vector3().fromArray(pelvis.userData.head).y;
+  return {shoulder,upper:upper1+upper2,lower:lower1+lower2,upperFraction:upper1/(upper1+upper2),lowerFraction:lower1/(lower1+lower2)};
+ });
  const targetA=new THREE.Vector3(),targetB=new THREE.Vector3(),elbow=new THREE.Vector3(),direction=new THREE.Vector3(),bend=new THREE.Vector3();
  const gripX=new THREE.Vector3(),gripY=new THREE.Vector3(),gripZ=new THREE.Vector3(),gripMatrix=new THREE.Matrix4(),gripQ=new THREE.Quaternion(),forearmAxis=new THREE.Vector3(),restAxis=new THREE.Vector3(),twistDelta=new THREE.Quaternion(),forearmQ=new THREE.Quaternion();
- function arm(side:number,shoulder:THREE.Vector3,hand:THREE.Vector3){
-  const suffix=side===0?'L':'R';targetA.copy(shoulder);
-  // The shaft lies inside the fingers, 7cm ahead of the wrist, not inside the wrist joint.
-  targetB.copy(hand).addScaledVector(gripY,-.07).addScaledVector(gripZ,.025);
-  direction.subVectors(targetB,targetA);const distance=Math.min(.505,Math.max(.09,direction.length()));direction.normalize();targetB.copy(targetA).addScaledVector(direction,distance);
-  const along=(.23*.23-.28*.28+distance*distance)/(2*distance),height=Math.sqrt(Math.max(0,.23*.23-along*along));
+ function arm(side:number,hand:THREE.Vector3){
+  const suffix=side===0?'L':'R',shape=anatomy[side];targetA.copy(shape.shoulder);
+  // The shaft lies inside the fingers, 9cm ahead of the wrist, not inside the wrist joint.
+  targetB.copy(hand).addScaledVector(gripY,-.09).addScaledVector(gripZ,.018);
+  direction.subVectors(targetB,targetA);const distance=direction.length();direction.normalize();
+  const along=(shape.upper**2-shape.lower**2+distance*distance)/(2*distance),height=Math.sqrt(Math.max(0,shape.upper**2-along*along));
   bend.set(side===0?-.4:.4,-1,.15);bend.addScaledVector(direction,-bend.dot(direction)).normalize();
   elbow.copy(targetA).addScaledVector(direction,along).addScaledVector(bend,height);
-  mid.copy(targetA).lerp(elbow,.27);aim('upperarm01.'+suffix,targetA,mid);aim('upperarm02.'+suffix,mid,elbow);
+  mid.copy(targetA).lerp(elbow,shape.upperFraction);aim('upperarm01.'+suffix,targetA,mid);aim('upperarm02.'+suffix,mid,elbow);
   // Spread pronation through both forearm bones instead of twisting only the wrist.
   forearmAxis.subVectors(targetB,elbow).normalize();const forearm=bones.get('lowerarm02.'+suffix)!;
   restAxis.fromArray(forearm.userData.tail).sub(a.fromArray(forearm.userData.head)).normalize();forearmQ.setFromUnitVectors(restAxis,forearmAxis);
   twistDelta.copy(gripQ).multiply(restHand[side]).multiply(forearmQ.invert());
   const raw=2*Math.atan2(twistDelta.x*forearmAxis.x+twistDelta.y*forearmAxis.y+twistDelta.z*forearmAxis.z,twistDelta.w),roll=Math.atan2(Math.sin(raw),Math.cos(raw));
-  mid.copy(elbow).lerp(targetB,.5);aim('lowerarm01.'+suffix,elbow,mid,roll*.35);aim('lowerarm02.'+suffix,mid,targetB,roll*.8);
+  mid.copy(elbow).lerp(targetB,shape.lowerFraction);aim('lowerarm01.'+suffix,elbow,mid,roll*.35);aim('lowerarm02.'+suffix,mid,targetB,roll*.8);
   const wrist=bones.get('wrist.'+suffix)!;wrist.parent!.updateWorldMatrix(true,false);wrist.position.copy(targetB).applyMatrix4(root.matrixWorld);wrist.parent!.worldToLocal(wrist.position);
   wrist.parent!.getWorldQuaternion(parentQ);wrist.quaternion.copy(parentQ.invert()).multiply(rootQ).multiply(gripQ).multiply(restHand[side]);wrist.updateMatrixWorld(true);
  }
- const defaultAxis=new THREE.Vector3(0,1,0);
- function pose(shoulders:THREE.Vector3[],hands:THREE.Vector3[],shaft=defaultAxis,paddleSide=-1){
+ const hands=[new THREE.Vector3(),new THREE.Vector3()],offsets=[new THREE.Vector3(),new THREE.Vector3()],orientations=[new THREE.Quaternion(),new THREE.Quaternion()];
+ const correction=new THREE.Vector3(),wristPoint=new THREE.Vector3();
+ function pose(paddle:THREE.Object3D,paddleSide=-1){
   root.updateWorldMatrix(true,false);root.getWorldQuaternion(rootQ);
-  gripX.copy(shaft).multiplyScalar(-paddleSide).normalize();gripY.set(0,0,-1).addScaledVector(gripX,gripX.z).normalize();gripZ.crossVectors(gripX,gripY);
-  gripQ.setFromRotationMatrix(gripMatrix.makeBasis(gripX,gripY,gripZ));arm(0,shoulders[0],hands[0]);arm(1,shoulders[1],hands[1]);
+  // Lower hand wraps the shaft; opposite hand wraps the transverse top handle.
+  for(let i=0;i<2;i++){
+   const lower=i===(paddleSide>0?1:0);
+   gripX.set(lower?0:1,lower?1:0,0).applyQuaternion(paddle.quaternion).multiplyScalar(lower?-paddleSide:paddleSide).normalize();
+   gripY.set(0,0,-1).addScaledVector(gripX,gripX.z).normalize();gripZ.crossVectors(gripX,gripY);
+   orientations[i].setFromRotationMatrix(gripMatrix.makeBasis(gripX,gripY,gripZ));
+   hands[i].set(0,lower?.04:.42,0).applyQuaternion(paddle.quaternion);
+   offsets[i].copy(hands[i]).addScaledVector(gripY,-.09).addScaledVector(gripZ,.018);
+  }
+  // Project ONE rigid paddle into the intersection of both arms' reachable workspaces.
+  // This preserves both grips and bone lengths, with a small natural elbow bend.
+  const top=paddleSide>0?0:1;
+  for(let iteration=0;iteration<64;iteration++){
+   // Keep the handle below eye level and beside the forward sightline in every view.
+   paddle.position.y=Math.min(paddle.position.y,anatomy[top].shoulder.y+.12-hands[top].y);
+   const inboard=(paddle.position.x+hands[top].x)*paddleSide;
+   if(inboard<.18)paddle.position.x+=paddleSide*(.18-inboard);
+   let error=0;
+   for(let i=0;i<2;i++){
+    const shape=anatomy[i];wristPoint.copy(paddle.position).add(offsets[i]);correction.subVectors(wristPoint,shape.shoulder);
+    const distance=correction.length(),reach=THREE.MathUtils.clamp(distance,Math.abs(shape.upper-shape.lower)+.035,(shape.upper+shape.lower)*.97);
+    error=Math.max(error,Math.abs(distance-reach));if(distance>0)paddle.position.addScaledVector(correction,(reach-distance)/distance);
+   }
+   if(error<1e-7)break;
+  }
+  paddle.updateMatrix();
+  for(let i=0;i<2;i++){
+   gripQ.copy(orientations[i]);gripY.set(0,1,0).applyQuaternion(gripQ);gripZ.set(0,0,1).applyQuaternion(gripQ);
+   hands[i].add(paddle.position);arm(i,hands[i]);
+  }
  }
  // Far rowers use a single frozen skin pose. Bone updates are reserved for nearby crew.
  function dispose(){povGeometry.forEach(g=>g.dispose());owned.forEach(m=>m.dispose());meshes.forEach(m=>{m.skeleton.dispose();});}
@@ -108,7 +145,7 @@ const distantCache=new WeakMap<THREE.Group,THREE.Group>();
 function distantCrew(source:THREE.Group){
  const cached=distantCache.get(source);if(cached)return cached;
  const model=createRig(source,'#ffffff',false),low=new THREE.Group();
- model.pose([new THREE.Vector3(-.17,1.05,-.015),new THREE.Vector3(.17,1.05,-.015)],[new THREE.Vector3(-.4,.95,-.42),new THREE.Vector3(-.13,1.35,-.42)]);model.root.updateMatrixWorld(true);
+ const paddle=new THREE.Object3D();paddle.position.set(-.35,1.03,-.29);paddle.rotation.set(-.22,0,-.65);model.pose(paddle);model.root.updateMatrixWorld(true);
  const point=new THREE.Vector3();
  for(const skinned of model.meshes){skinned.skeleton.update();const geometry=skinned.geometry.clone(),p=geometry.getAttribute('position');for(let i=0;i<p.count;i++){point.fromBufferAttribute(p,i);skinned.applyBoneTransform(i,point);p.setXYZ(i,point.x,point.y,point.z);}geometry.computeVertexNormals();const material=(skinned.material as THREE.Material).clone(),mesh=new THREE.Mesh(geometry,material);mesh.applyMatrix4(skinned.matrixWorld);mesh.castShadow=true;mesh.receiveShadow=true;low.add(mesh);}
  model.dispose();distantCache.set(source,low);return low;

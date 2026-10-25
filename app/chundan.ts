@@ -1,12 +1,7 @@
 import * as THREE from 'three';
 
-/** Game-scaled Chundan Vallam section. Forward is -z; the raised stern is +z. */
-export function chundanSection(u: number) {
-  const t=Math.min(1,Math.abs(u));
-  const end=Math.max(0,(t-.72)/.28);
-  const rise=(u>0?2.8:.52)*end*end*(3-2*end);
-  return {width:Math.max(.012,.78*Math.pow(Math.max(0,1-t**4),.6)),rise,rim:.46+rise};
-}
+import {chundanSection} from './hull-profile.ts';
+export {chundanSection} from './hull-profile.ts';
 
 /** Closed timber shell, with curved outer/inner surfaces and a real gunwale thickness. */
 export function createChundanHull() {

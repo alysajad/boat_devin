@@ -1,0 +1,27 @@
+
+Running 20 tests using 1 worker
+
+(node:115193) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 game-tests/director.spec.ts:14:5 › director has live previews, clickable seat POV, authoritative stroke labels and fullscreen start/exit (25.1s)
+  ✓   2 game-tests/director.spec.ts:34:5 › director fullscreen fallback can be exited when native fullscreen is refused (6.1s)
+  ✓   3 game-tests/director.spec.ts:39:5 › clicking a character mesh selects its POV and private feedback cannot be forged or read by another player (12.8s)
+  ✓   4 game-tests/director.spec.ts:56:5 › Chundan seats a full 25-person crew and keeps the last rower POV usable (10.0s)
+  ✓   5 game-tests/director.spec.ts:70:5 › broadcast crew calls follow accepted strokes, coalesce teammates, mute, and expose the 90 FPS target (15.3s)
+  ✓   6 game-tests/display.spec.ts:2:60 › portrait controller: motion granted, swipe fallback, no 3D downloads (9.5s)
+  ✓   7 game-tests/display.spec.ts:2:60 › portrait controller: motion denied, swipe fallback, no 3D downloads (2.3s)
+  ✓   8 game-tests/display.spec.ts:2:60 › portrait controller: motion missing, swipe fallback, no 3D downloads (1.4s)
+  ✓   9 game-tests/event.spec.ts:7:5 › solo phones row, pause, release disconnected seats, rematch; broadcast manual cameras and fullscreen (32.4s)
+  ✓  10 game-tests/event.spec.ts:20:5 › admin settings, automatic crew growth, move and remove (12.5s)
+  ✓  11 game-tests/event.spec.ts:26:5 › capabilities reject cross-room reads, detailed player feeds, state writes and forged events (936ms)
+  ✓  12 game-tests/event.spec.ts:33:5 › broadcast WebGL refusal keeps the room usable (1.2s)
+  ✓  13 game-tests/event.spec.ts:36:5 › a changed server boot ID ends the old session explicitly (3.8s)
+  ✓  14 game-tests/event.spec.ts:38:5 › swipe practice gives feedback, Ready waits for host, refresh removes the old rower (4.3s)
+  ✓  15 game-tests/event.spec.ts:49:5 › calibrated sideways motion practices in the lobby and propels a racing boat (35.1s)
+  ✓  16 game-tests/network.spec.ts:3:5 › host invite refreshes when moving from Wi-Fi to a hotspot, without changing the room (5.8s)
+  ✓  17 game-tests/network.spec.ts:21:5 › HTTPS tunnel origin is used in the QR while admin stays on localhost (1.3s)
+  ✓  18 game-tests/network.spec.ts:27:5 › host can choose direct Wi-Fi swipe QR or trusted local HTTPS (5.8s)
+  ✓  19 game-tests/rowing.spec.ts:5:5 › assigned sides, solo transition, isolated protocol and no 3D phone downloads (7.2s)
+  ✓  20 game-tests/rowing.spec.ts:21:5 › left and right POV grips remain clear at 16:9 and 16:10 with reduced-motion roll disabled (11.7s)
+
+  20 passed (3.4m)

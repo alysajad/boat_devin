@@ -10,13 +10,13 @@ const authority=new Authority(),server=new Deepstream('conf/config.yml');
 const wsPort=Number(process.env.PORT||6020),apiPort=Number(process.env.API_PORT||wsPort+100);
 const auth={description:'Room capability authentication',async whenReady(){},async close(){},async isValidUser(_connection,data){
  if(data.token===authority.secret&&data.username==='_race_server')return {isValid:true,id:'_race_server'};
- const s=authority.sessions.get(data.token);if(!s||data.username!==`race_v3-${s.code}/${s.id}`)return {isValid:false};
+ const s=authority.sessions.get(data.token);if(!s||data.username!==`race_v4-${s.code}/${s.id}`)return {isValid:false};
  authority.connection(data.username,true);return {isValid:true,id:data.username};
 },onClientDisconnect(user){authority.connection(user,false);}};
 const permissions={description:'Server authoritative room records',async whenReady(){},async close(){},canPerformAction(socket,message,callback,pass){
  let allowed=socket.userId==='_race_server';const s=authority.users.get(socket.userId);
  if(!allowed&&s&&authority.sessions.has(s.token)){
-  const prefix=`race_v3-${s.code}/`;
+  const prefix=`race_v4-${s.code}/`;
   if(message.topic===TOPIC.RECORD&&[prefix+'race',prefix+(s.role==='player'?'status':'snapshot')].includes(message.name))allowed=[R.READ,R.HEAD,R.SUBSCRIBE,R.UNSUBSCRIBE,R.SUBSCRIBEANDHEAD,R.SUBSCRIBEANDREAD,R.SUBSCRIBECREATEANDREAD].includes(message.action);
   if(message.topic===TOPIC.EVENT&&message.action===E.EMIT)allowed=message.name===prefix+`heartbeat/${s.id}`||(s.role==='player'&&message.name===prefix+`stroke/${s.id}`);
   if(message.topic===TOPIC.EVENT&&[E.SUBSCRIBE,E.UNSUBSCRIBE].includes(message.action))allowed=message.name===prefix+`feedback/${s.id}`||(s.role!=='player'&&message.name===prefix+'rowing');
@@ -58,7 +58,7 @@ server.on('started',async()=>{
  },1000/60);
  publisher=setInterval(()=>{
   for(const room of authority.rooms.values())authority.publish(room);
-  for(const s of authority.sessions.values())if((s.connected||s.role==='player')&&s.seen&&Date.now()-s.seen>8000)authority.connection(`race_v3-${s.code}/${s.id}`,false);
+  for(const s of authority.sessions.values())if((s.connected||s.role==='player')&&s.seen&&Date.now()-s.seen>8000)authority.connection(`race_v4-${s.code}/${s.id}`,false);
  },50);
  console.log('Authoritative race simulation started');
 });

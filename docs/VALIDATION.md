@@ -1,4 +1,37 @@
-# Protocol 3 validation — 25 October 2026
+# Protocol 4 validation — 25 October 2026
+
+Implemented authoritative left/right steering, lateral drift, damped hull roll, recoverable Rapier contacts, solo assistance, rotated-bow finishes and corrected two-hand paddle grips. Replace existing rooms after upgrading; HTTP endpoint paths remain unchanged.
+
+## Checks on this version
+
+- TypeScript and production build pass. The game suite passes 60 tests; the retained compatibility suite passes 59 tests. [Game tests](../artifacts/rowing-v4-unit.log), [compatibility tests](../artifacts/rowing-v4-compat.log), [typecheck](../artifacts/rowing-v4-typecheck.log), [build](../artifacts/rowing-v4-build.log).
+- All 20 Chromium scenarios pass. The two new rowing/POV scenarios pass again after the final balance and render adjustments. Coverage includes assigned-side instructions, the solo transition after a departure, old-protocol rejection, absence of 3D phone downloads, motion/swipe input, director controls, pause/resume and rematches. [Full browser run](../artifacts/rowing-v4-browser.log), [final rowing checks](../artifacts/rowing-v4-browser-final.log).
+- Physics checks cover opposing, alternating, missed and one-sided strokes; odd crews; frozen side allocations and teamwork denominators; center-applied bonuses; downstream stabilization without lane recentering; lateral drift and roll limits. Contact checks cover boats, banks, moored houseboats and high-speed impacts. Finish checks cover sideways bows, backward crossings, close finishes and ties across the 60 Hz step boundary.
+- Collision footprints share the rendered hull profile. A conservative straight midsection stays within 3 cm of the visible hull and avoids Rapier pruning the nearly collinear points on a long boat. Contacts use a 1 cm skin to keep hulls separated.
+- The rig test samples both paddle sides through catch, drive and recovery. It checks hand-to-grip error below 2 cm, unchanged arm/finger bone lengths, continuous forearm/wrist rotation at the recovery transition, fingertips within 3 cm of the grip axis, a clear forward hand position and no visible skin inside the camera's 4.5 cm near radius. Both 16:9 and 16:10 screenshots were reviewed. [Left 16:10](../artifacts/rowing-v4-pov-left-800-ready.png), [right 16:9 drive](../artifacts/rowing-v4-pov-right-720-drive.png). POV roll is capped at 3° and the reduced-motion browser check confirms zero POV roll.
+
+## 15-minute local run
+
+The final 900-second window completed in 911 seconds including setup, with 50 scripted controllers, 10 boats, a scripted admin/spectator and one rendered fullscreen broadcast (53 connections). It completed 22 rounds and acknowledged 44,900 strokes with zero reported errors. No browser suite ran alongside it. The browser used AMD Radeon hardware through ANGLE.
+
+| Measurement | Result |
+| --- | --- |
+| Local acknowledgment P95 | **103.41 ms** (limit 350 ms) |
+| Worst sampled server-step P95 | **7.54 ms** (limit 8 ms) |
+| Sampled broadcast FPS | **6–60; median 60**, 153 samples |
+| Samples below 30 FPS | **40 of 153** |
+| Render-frame gaps above 250 ms | **20**, largest **467 ms** |
+| Gap coinciding with a round change | **267 ms**, one recorded |
+| Longest rematch reset API request | **79.20 ms** |
+| Broadcast assets transferred | **5,920,238 bytes** (5.65 MiB) |
+
+Both latency limits passed. Rendering still drops below the 60 FPS target during countdowns and races; the median does not establish sustained 60 FPS. The round-change gap and reset API time measure separate parts of rematch behavior, not total scene-loading time. Frame-gap measurements include startup; gaps are rounded to milliseconds. Local scripted results do not establish Cloudflare latency, physical-phone performance or venue Wi-Fi readiness.
+
+[Machine-readable report](../artifacts/rowing-v4-load.json), [run log](../artifacts/rowing-v4-load.log), [rendered broadcast](../artifacts/rowing-v4-load-broadcast.png).
+
+---
+
+# Earlier protocol 3 validation — 25 October 2026
 
 Implemented portrait motion/swipe controllers, configurable motion sensitivity and rowing force, automatic crew growth, fixed courses, synchronized crew propulsion, distance/timed races, broadcast direction and an HTTPS event launcher. Protocol 2 rooms must be replaced.
 

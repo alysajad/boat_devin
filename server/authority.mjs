@@ -7,15 +7,15 @@ const code=()=>Array.from(randomBytes(6),v=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[v
 export class Authority {
  constructor(){this.bootId=randomUUID();this.rooms=new Map();this.sessions=new Map();this.users=new Map();this.secret=id();this.metrics={steps:0,stepMs:0,maxStepMs:0,inputs:0,rejected:0};}
  session(room,role,name='',playerId=id()){
-  const s={code:room.race.room,id:playerId,role,name,token:randomBytes(32).toString('hex'),bootId:this.bootId,seen:Date.now()};this.sessions.set(s.token,s);this.users.set(`race_v3-${s.code}/${s.id}`,s);return s;
+  const s={code:room.race.room,id:playerId,role,name,token:randomBytes(32).toString('hex'),bootId:this.bootId,seen:Date.now()};this.sessions.set(s.token,s);this.users.set(`race_v4-${s.code}/${s.id}`,s);return s;
  }
  auth(token){const s=this.sessions.get(token);if(!s||!this.rooms.has(s.code))throw new Error('Session expired. Join a fresh room.');return s;}
  async create(client){
   let name;do{name=code();}while(this.rooms.has(name));
-  const race={schema:3,settings:defaultSettings(),elapsed:0,room:name,round:1,phase:'lobby',config:defaultConfig(),boatOrder:[],players:[],boats:{},remaining:60,countdown:5,revision:0,seed:7,riverWidth:40,message:'',serverTime:Date.now(),logs:[]};
+  const race={schema:4,settings:defaultSettings(),elapsed:0,room:name,round:1,phase:'lobby',config:defaultConfig(),boatOrder:[],players:[],boats:{},remaining:60,countdown:5,revision:0,seed:7,riverWidth:40,message:'',serverTime:Date.now(),logs:[]};
   const room={client,race,memory:new Map(),recent:[],pending:[],statusAt:0,physics:null,touched:Date.now(),dirty:true};this.rooms.set(name,room);this.lobbyBoats(room);
-  room.meta=client.record.getRecord(`race_v3-${name}/race`);room.snapshot=client.record.getRecord(`race_v3-${name}/snapshot`);room.status=client.record.getRecord(`race_v3-${name}/status`);await Promise.all([room.meta.whenReady(),room.snapshot.whenReady(),room.status.whenReady()]);this.publish(room,true);
-  const s=this.session(room,'admin','Host');client.event.subscribe(`race_v3-${name}/heartbeat/${s.id}`,()=>{if(!s.connected)s.inputAfter=Date.now();s.seen=Date.now();s.connected=true;room.touched=Date.now();});return s;
+  room.meta=client.record.getRecord(`race_v4-${name}/race`);room.snapshot=client.record.getRecord(`race_v4-${name}/snapshot`);room.status=client.record.getRecord(`race_v4-${name}/status`);await Promise.all([room.meta.whenReady(),room.snapshot.whenReady(),room.status.whenReady()]);this.publish(room,true);
+  const s=this.session(room,'admin','Host');client.event.subscribe(`race_v4-${name}/heartbeat/${s.id}`,()=>{if(!s.connected)s.inputAfter=Date.now();s.seen=Date.now();s.connected=true;room.touched=Date.now();});return s;
  }
  async join(client,code,role,name,team){
   const room=this.rooms.get(code);if(!room)throw new Error('Room not found. Ask the laptop host to create a new race.');
@@ -33,25 +33,25 @@ export class Authority {
   s.team=team;
   if(selected){race.players.push({id:s.id,name,team:selected.id,seat:0,side:'left',ready:false,connected:false,strokes:0,lastStroke:0,lastSide:'left',mode:null,cadence:0});this.seats(room);}
   else if(role==='player')s.waiting=true;
-  client.event.subscribe(`race_v3-${code}/stroke/${s.id}`,input=>this.stroke(s,input));
-  client.event.subscribe(`race_v3-${code}/heartbeat/${s.id}`,data=>{if(!this.sessions.has(s.token))return;const p=race.players.find(p=>p.id===s.id);if(p&&!p.connected){p.connected=true;room.dirty=true;}if(!s.connected)s.inputAfter=Date.now();s.seen=Date.now();s.connected=true;room.touched=Date.now();if(Number.isFinite(data?.at))client.event.emit?.(`race_v3-${code}/feedback/${s.id}`,{kind:'clock',sent:data.at,serverTime:Date.now()});});
+  client.event.subscribe(`race_v4-${code}/stroke/${s.id}`,input=>this.stroke(s,input));
+  client.event.subscribe(`race_v4-${code}/heartbeat/${s.id}`,data=>{if(!this.sessions.has(s.token))return;const p=race.players.find(p=>p.id===s.id);if(p&&!p.connected){p.connected=true;room.dirty=true;}if(!s.connected)s.inputAfter=Date.now();s.seen=Date.now();s.connected=true;room.touched=Date.now();if(Number.isFinite(data?.at))client.event.emit?.(`race_v4-${code}/feedback/${s.id}`,{kind:'clock',sent:data.at,serverTime:Date.now()});});
   room.dirty=true;room.touched=Date.now();this.publish(room,true);return s;
  }
  connection(user,connected){const s=this.users.get(user);if(!s)return;if(!connected&&s.role==='player'){this.leave(s);return;}const room=this.rooms.get(s.code);if(!room)return;if(connected&&!s.connected)s.inputAfter=Date.now();s.seen=Date.now();s.connected=connected;const p=room.race.players.find(p=>p.id===s.id);if(p){p.connected=connected;if(!connected&&room.race.phase==='lobby')p.ready=false;room.dirty=true;}}
  leave(s){
   if(!s||!this.sessions.delete(s.token))return;
-  this.users.delete(`race_v3-${s.code}/${s.id}`);
-  for(const channel of ['stroke','heartbeat'])s.client?.event.unsubscribe?.(`race_v3-${s.code}/${channel}/${s.id}`);
+  this.users.delete(`race_v4-${s.code}/${s.id}`);
+  for(const channel of ['stroke','heartbeat'])s.client?.event.unsubscribe?.(`race_v4-${s.code}/${channel}/${s.id}`);
   const room=this.rooms.get(s.code);if(!room)return;
   room.race.players=room.race.players.filter(p=>p.id!==s.id);
   room.pending=room.pending.filter(p=>p.player.id!==s.id);
   room.recent=room.recent.filter(p=>p.id!==s.id);room.memory.delete(s.id);
   // Active boat dimensions and starting crew normalization remain frozen.
-  if(room.race.phase==='lobby')this.seats(room);
+  if(room.race.phase==='lobby')this.seats(room);else room.physics?.updateAssistance();
   room.dirty=true;this.publish(room,true);
  }
  seats(room){for(const c of room.race.config)room.race.players.filter(p=>p.team===c.id).forEach((p,i)=>{const side=(i+room.race.round)%2?'left':'right';if(p.seat!==i||p.side!==side)p.ready=false;p.seat=i;p.side=side;});this.lobbyBoats(room);}
- lobbyBoats(room){const r=room.race;r.boatOrder=r.config.map(c=>c.id);r.riverWidth=Math.max(40,r.config.length*4+24);r.boats=Object.fromEntries(r.config.map((c,i)=>[c.id,{x:(i-(r.config.length-1)/2)*4,distance:-boatLength(r.players.filter(p=>p.team===c.id).length)/2,speed:0,heading:0,vx:0,vy:0,angularVelocity:0,length:boatLength(r.players.filter(p=>p.team===c.id).length),progress:0,collisions:0,splash:0,crewCount:r.players.filter(p=>p.team===c.id).length,sync:0,finishTime:null}]));}
+ lobbyBoats(room){const r=room.race;r.boatOrder=r.config.map(c=>c.id);r.riverWidth=Math.max(40,r.config.length*4+24);r.boats=Object.fromEntries(r.config.map((c,i)=>[c.id,{x:(i-(r.config.length-1)/2)*4,distance:-boatLength(r.players.filter(p=>p.team===c.id).length)/2,speed:0,heading:0,vx:0,vy:0,angularVelocity:0,roll:0,rollVelocity:0,balance:0,soloAssist:r.players.filter(p=>p.team===c.id).length===1,contact:false,length:boatLength(r.players.filter(p=>p.team===c.id).length),progress:0,collisions:0,splash:0,crewCount:r.players.filter(p=>p.team===c.id).length,sync:0,finishTime:null}]));}
  command(s,body){
   const room=this.rooms.get(s.code),r=room.race,p=r.players.find(p=>p.id===s.id),action=body.action;room.touched=Date.now();
   if(action==='controller'){
@@ -74,7 +74,7 @@ export class Authority {
    }else if(action==='move'){
     if(r.phase!=='lobby')throw new Error('Move players in the lobby.');this.move(room,body.playerId,body.team);
    }else if(action==='remove'){
-    if(r.phase!=='lobby')throw new Error('Return to the lobby before removing players.');this.leave(this.users.get(`race_v3-${s.code}/${body.playerId}`));
+    if(r.phase!=='lobby')throw new Error('Return to the lobby before removing players.');this.leave(this.users.get(`race_v4-${s.code}/${body.playerId}`));
    }else if(action==='balance'){
     if(r.phase!=='lobby')throw new Error('Balance in the lobby.');
     const counts=new Map(r.config.map(c=>[c.id,0]));
@@ -111,10 +111,10 @@ export class Authority {
   room.memory.set(p.id,{seq:input.seq,at:now,eventAt:at});
   room.recent.push({id:p.id,team:p.team,at});
   room.pending.push({player:p,at,received:wall});
-  p.strokes++;p.lastStroke=at;p.lastSide=p.side;r.boats[p.team].splash++;
-  const accepted={kind:'stroke',id:p.id,round:r.round,strokes:p.strokes,at,side:p.side,cadence:p.cadence};
-  room.client.event.emit?.(`race_v3-${s.code}/rowing`,accepted);
-  room.client.event.emit?.(`race_v3-${s.code}/feedback/${s.id}`,accepted);
+  room.physics.updateAssistance();p.lastSide=r.boats[p.team].soloAssist?(p.strokes%2?'right':'left'):p.side;p.strokes++;p.lastStroke=at;r.boats[p.team].splash++;
+  const accepted={kind:'stroke',id:p.id,round:r.round,strokes:p.strokes,at,side:p.lastSide,cadence:p.cadence};
+  room.client.event.emit?.(`race_v4-${s.code}/rowing`,accepted);
+  room.client.event.emit?.(`race_v4-${s.code}/feedback/${s.id}`,accepted);
  }
  syncCredit(events,at,crew){
   if(crew===1)return 1;
@@ -143,16 +143,13 @@ export class Authority {
     // Base thrust is immediate; settle the small teamwork bonus after the coordination window.
     for(const pending of room.pending){
      if(!pending.started){room.physics.stroke(pending.player,0);pending.started=true;}
-     if(now-pending.received>=800){const b=r.boats[pending.player.team];const events=room.recent.filter(e=>e.team===pending.player.team&&Math.abs(e.at-pending.at)<=300);const sync=this.syncCredit(events,pending.at,b.crewCount);room.physics.drives.push({id:pending.player.team,age:0,impulse:3.3*r.settings.forceMultiplier*.1*Math.max(0,sync)/b.crewCount});pending.done=true;}
+     if(now-pending.received>=800){const b=r.boats[pending.player.team];const events=room.recent.filter(e=>e.team===pending.player.team&&Math.abs(e.at-pending.at)<=300);const sync=this.syncCredit(events,pending.at,b.crewCount);room.physics.bonus(pending.player,.1*sync);pending.done=true;}
     }
     room.pending=room.pending.filter(p=>!p.done);
     const slice=r.settings.format==='timed'?Math.min(dt,r.remaining):dt;
-    const before=Object.fromEntries(r.boatOrder.map(id=>[id,r.boats[id].progress]));
-    room.physics.step(slice);
-    if(r.settings.format==='distance'){
-     const crossings=r.boatOrder.filter(id=>before[id]<r.settings.distance&&r.boats[id].progress>=r.settings.distance).map(id=>({id,fraction:(r.settings.distance-before[id])/(r.boats[id].progress-before[id])}));
-     if(crossings.length){const first=Math.min(...crossings.map(c=>c.fraction));for(const c of crossings)if(slice*(c.fraction-first)<.001)r.boats[c.id].finishTime=r.elapsed+slice*c.fraction;for(const id of r.boatOrder){const b=r.boats[id];b.progress=before[id]+(b.progress-before[id])*first;b.distance=b.progress-b.length/2;}r.elapsed+=slice*first;r.phase='results';room.dirty=true;}else r.elapsed+=slice;
-    }else{r.elapsed+=slice;r.remaining=Math.max(0,r.remaining-slice);if(r.remaining<1e-8){r.remaining=0;r.phase='results';room.dirty=true;}}
+    const consumed=room.physics.step(slice);r.elapsed+=consumed;
+    if(r.settings.format==='timed'){r.remaining=Math.max(0,r.remaining-consumed);if(r.remaining<1e-8){r.remaining=0;r.phase='results';room.physics.freeze();}}
+    if(r.phase==='results')room.dirty=true;
    }
   }
   const cost=performance.now()-start;this.metrics.steps++;this.metrics.stepMs=cost;this.metrics.maxStepMs=Math.max(this.metrics.maxStepMs,cost);
@@ -161,8 +158,8 @@ export class Authority {
   if(!room.meta)return;const r=room.race;r.revision++;r.serverTime=Date.now();
   if(room.dirty||force){room.meta.set(JSON.parse(JSON.stringify(r)));room.dirty=false;}
   const q=v=>Math.round(v*1000)/1000,common={phase:r.phase,remaining:q(r.remaining),countdown:q(r.countdown),elapsed:q(r.elapsed),revision:r.revision,round:r.round,serverTime:r.serverTime};
-  room.snapshot.set({...common,frames:r.boatOrder.map(id=>{const b=r.boats[id];return[id,...[b.x,b.distance,b.speed,b.heading,b.vx,b.vy,b.angularVelocity,b.progress].map(q),b.collisions,b.splash,q(b.sync),b.finishTime];}),logs:[],strokes:r.players.map((p,i)=>[i,p.strokes,Math.min(65535,r.serverTime-p.lastStroke),p.lastSide,p.cadence])});
-  if(force||r.serverTime>=room.statusAt){room.statusAt=force||r.serverTime-room.statusAt>200?r.serverTime+200:room.statusAt+200;room.status.set({...common,boats:Object.fromEntries(r.boatOrder.map(id=>{const b=r.boats[id];return[id,{progress:q(b.progress),speed:q(b.speed),sync:q(b.sync),finishTime:b.finishTime}];})),players:r.players.map(p=>({id:p.id,strokes:p.strokes,cadence:p.cadence}))});}
+  room.snapshot.set({...common,frames:r.boatOrder.map(id=>{const b=r.boats[id];return[id,...[b.x,b.distance,b.speed,b.heading,b.vx,b.vy,b.angularVelocity,b.progress].map(q),b.collisions,b.splash,q(b.sync),b.finishTime,q(b.roll),q(b.rollVelocity),q(b.balance),b.soloAssist,b.contact];}),logs:[],strokes:r.players.map((p,i)=>[i,p.strokes,Math.min(65535,r.serverTime-p.lastStroke),p.lastSide,p.cadence])});
+  if(force||r.serverTime>=room.statusAt){room.statusAt=force||r.serverTime-room.statusAt>200?r.serverTime+200:room.statusAt+200;room.status.set({...common,boats:Object.fromEntries(r.boatOrder.map(id=>{const b=r.boats[id];return[id,{progress:q(b.progress),speed:q(b.speed),sync:q(b.sync),finishTime:b.finishTime,balance:q(b.balance),soloAssist:b.soloAssist}];})),players:r.players.map(p=>({id:p.id,strokes:p.strokes,cadence:p.cadence}))});}
  }
  close(){for(const room of this.rooms.values())room.physics?.dispose();}
 }

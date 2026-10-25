@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {mooredHouseboat} from './hull-profile';
 import { WATER_LEVEL } from './world';
 
 export type SceneQuality = 'low' | 'medium' | 'high';
@@ -117,9 +118,9 @@ export function createScenery(scene: THREE.Scene, assets: Assets, broadcast: boo
       for (const offset of [-2, 2]) put('timber', x + offset, 1.1, z + 2.2, .08, 2.2, .08);
     }
     // Moored kettuvallam: stitched timber hull, arched woven canopy, open veranda.
-    if (id % 3 === 0 && id >= 0 && id < 54) {
-      const mooredSide=(id/3)%2 ? 1 : -1;
-      const x = mooredSide * (riverWidth/2-1.4), z = z0 - 12;
+    const moored=mooredHouseboat(id,riverWidth);
+    if (moored) {
+      const {x,side:mooredSide}=moored,z=-moored.distance;
       put('hull', x, .05, z, 1.04, .36, 4.8);
       put('deck', x, .31, z, 1.8, .12, 7.5);
       put('reed', x, 1.35, z + .25, 1, 1.05, 3.1);

@@ -17,7 +17,7 @@ export function paddlePose(age: number, preview = 0) {
   // Recovery lifts the entire blade clear of the water before returning it forward.
   const pull = drive ? smooth : active ? 1 - smooth : 0;
   const lift = drive ? 0 : active ? Math.sin(Math.PI / 2 * Math.min(1, t * 4)) * .32 + Math.sin(Math.PI * t) * .08 : .32;
-  return { active, drive, pull, y: .71 + lift - (!active ? preview * .18 : 0), z: -.32 + pull * .22, pitch: -.22 + pull * .42 };
+  return { active, drive, pull, feather: active && !drive ? Math.sin(Math.PI*t)*.7 : 0, y: .71 + lift - (!active ? preview * .18 : 0), z: -.32 + pull * .22, pitch: -.22 + pull * .42 };
 }
 
 /** Same long wave as the water shader, used to seat the hull on the surface. */

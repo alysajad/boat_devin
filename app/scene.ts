@@ -7,7 +7,7 @@ import { crewSeatZ, rankings, type Race, type Team, type Player, type Side } fro
 import { loadCrew, createCrew } from './crew';
 import { LOG_HALF_LENGTH, LOG_RADIUS, WATER_LEVEL } from './world';
 import { createScenery, type SceneQuality } from './scenery';
-import { paddlePose, waterHeight, STROKE_SECONDS, PADDLE_LEAN } from './rowing';
+import { paddlePose, waterHeight, PADDLE_LEAN } from './rowing';
 
 type Options = { getRace: () => Race | null; playerId?: string; view: 'player' | 'broadcast'; followBoat?: () => string; cameraMode?: () => string; povPlayer?:()=>string;selectPlayer?:(id:string)=>void;serverNow?:()=>number;graphics?:()=>string;frameRate?:()=>number;previewRoot?:HTMLElement;onFallback?: (reason: string) => void };
 
@@ -283,7 +283,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   const dynamicRoot = new THREE.Group(); scene.add(dynamicRoot);
   const logRoot = new THREE.Group(); scene.add(logRoot);
   type Crew = { root: THREE.Group; model?: ReturnType<typeof createCrew>; paddle: THREE.Group; splash: THREE.Group; playerId: string; strokes: number; at: number; side: number };
-  type BoatScene = { root: THREE.Group; crew: Crew[]; wake: THREE.Group; x: number; distance: number; heading: number; collision: THREE.Mesh; collisions: number; collisionAt: number };
+  type BoatScene = { root: THREE.Group; crew: Crew[]; wake: THREE.Group; x: number; distance: number; heading: number; roll: number; collision: THREE.Mesh; collisions: number; collisionAt: number };
   const boats = {} as Record<Team, BoatScene>;
   const softPixels=new Uint8Array(64*64*4);
   for(let y=0;y<64;y++)for(let x=0;x<64;x++){const i=(y*64+x)*4,r=Math.hypot((x-31.5)/31.5,(y-31.5)/31.5);softPixels.set([255,255,255,Math.round(Math.pow(Math.max(0,1-r*r),2)*255)],i);}
@@ -328,7 +328,6 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   });
   const bladeShape = new THREE.Shape(); bladeShape.moveTo(0,.25); bladeShape.bezierCurveTo(.08,.18,.15,-.03,.1,-.24); bladeShape.quadraticCurveTo(0,-.34,-.1,-.24); bladeShape.bezierCurveTo(-.15,-.03,-.08,.18,0,.25);
   const bladeGeo = geometry(new THREE.ExtrudeGeometry(bladeShape, { depth: .025, bevelEnabled: true, bevelThickness: .008, bevelSize: .012, bevelSegments: 1, curveSegments: 5 }));
-  const shoulders=[new THREE.Vector3(),new THREE.Vector3()],hands=[new THREE.Vector3(),new THREE.Vector3()],shaft=new THREE.Vector3();
   const bladePoint = new THREE.Vector3();
   const contactShade = new THREE.MeshBasicMaterial({color:'#241d15',map:softMask,transparent:true,opacity:.24,depthWrite:false}); materials.add(contactShade);
   const contactGeo = geometry(new THREE.CircleGeometry(1, 16));
@@ -387,7 +386,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     }
     const collision = node(root, collisionGeo, collisionMat, 0, -.085, 0, 1.3, length/2+.3, 1);
     collision.rotation.x = -Math.PI / 2; collision.visible = false;
-    boats[team] = { root, crew, wake, x: 0, distance: 0, heading: 0, collision, collisions: 0, collisionAt: -Infinity };
+    boats[team] = { root, crew, wake, x: 0, distance: 0, heading: 0, roll: 0, collision, collisions: 0, collisionAt: -Infinity };
   }
   const logs: { mesh: THREE.Group; id: number; x: number; distance: number }[] = [];
   const bark = material('#896b43');
@@ -471,21 +470,15 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
       if (player.strokes > crew.strokes && !(own && now < predictionUntil && player.strokes <= predictionCount)) crew.at = now-Math.max(0,serverNow()-player.lastStroke);
       crew.strokes = player.strokes;
     }
-    if(player && options.getRace()!.boats[player.team].crewCount===1)crew.side=(own?(localSide||player.lastSide):player.lastSide)==='right'?1:-1;
+    if(player && options.getRace()!.boats[player.team].soloAssist)crew.side=(own?(localSide||player.lastSide):player.lastSide)==='right'?1:-1;
     const age = (now - (own ? Math.max(crew.at, localStrokeAt) : crew.at)) / 1000;
     const stroke = paddlePose(age, own ? preview : 0);
     crew.paddle.position.set(crew.side * .35, stroke.y, stroke.z+.03);
     // Feather the blade through recovery; its working face pushes water during the drive.
-    crew.paddle.rotation.set(stroke.pitch, stroke.active && !stroke.drive ? Math.sin(Math.PI * age / STROKE_SECONDS) * .7 : 0, crew.side * PADDLE_LEAN);
+    crew.paddle.rotation.set(stroke.pitch, stroke.feather, crew.side * PADDLE_LEAN);
     crew.paddle.updateMatrix();
-    if(detailed){
-    for (let i = 0; i < 2; i++) {
-      shoulders[i].set(i ? .17 : -.17, 1.05, -.015);
-      hands[i].set(0, (i === (crew.side > 0 ? 1 : 0)) ? -.10 : .40, 0).applyMatrix4(crew.paddle.matrix);
-    }
-    shaft.set(0,1,0).applyQuaternion(crew.paddle.quaternion);
-    crew.model?.pose(shoulders,hands,shaft,crew.side);
-    }
+    // Constrain the shared paddle before skinning; external and POV use the same pose.
+    if(detailed)crew.model?.pose(crew.paddle,crew.side);
     bladePoint.set(0,-1.2,0).applyMatrix4(crew.paddle.matrix);
     if(own){element.dataset.strokePhase=stroke.drive?'drive':stroke.active?'recovery':'ready';element.dataset.bladeHeight=bladePoint.y.toFixed(3);}
     crew.splash.visible = stroke.drive;
@@ -500,7 +493,8 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     if(cam.fov!==78){cam.fov=78;cam.updateProjectionMatrix();}
     // A slight aft eye offset keeps the near forearm out of the center of the broadcast.
     cameraPoint.set(race.boats[player.team].crewCount===1?0:(player.side==='left'?-1:1)*.36,1.32,crewSeatZ(player.seat,race.boats[player.team].crewCount)+.24);
-    boat.root.updateMatrixWorld(true);cam.position.copy(boat.root.localToWorld(cameraPoint));boat.root.getWorldQuaternion(boatQuaternion);
+    boat.root.updateMatrixWorld(true);cam.position.copy(boat.root.localToWorld(cameraPoint));boatQuaternion.setFromEuler(new THREE.Euler(boat.root.rotation.x,-boat.heading,reduced?0:THREE.MathUtils.clamp(boat.roll,-Math.PI/60,Math.PI/60)));
+    element.dataset.povRoll=(reduced?0:THREE.MathUtils.clamp(boat.roll,-Math.PI/60,Math.PI/60)).toFixed(4);
     lookEuler.set(pitch-.13,yaw,0);lookQuaternion.setFromEuler(lookEuler);cam.quaternion.copy(boatQuaternion).multiply(lookQuaternion);
   }
   function setShot(cam:THREE.PerspectiveCamera,shot:string,boatId:string,race:Race,blend=1){
@@ -568,6 +562,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     const race = options.getRace();
     if (!race) { renderer!.render(scene, camera); return; }
     const preference=options.graphics?.()||'auto';if(preference!==graphicsPreference){graphicsPreference=preference;frameFallback=false;quality=preference==='performance'?'medium':'high';slowWindows=fastWindows=0;resize();}
+    element.dataset.round=String(race.round);element.dataset.phase=race.phase;
     const reset = race.round !== lastRound;
     if (reset) { localStrokeAt = -Infinity; predictionCount = 0; predictionUntil = 0; preview = 0; }
     syncRoster(race, now);
@@ -575,21 +570,21 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     let animatedCrew=0;
     for (const team of teams) {
       const b = boats[team], state = race.boats[team];
-      const boatEase = state.collisions > b.collisions ? 1 : ease;
-      b.x += (state.x - b.x) * boatEase;
-      const ahead=race.phase==='racing'?Math.min(.1,Math.max(0,(serverNow()-race.serverTime)/1000)):0;
-      b.distance += (state.distance+state.speed*ahead-b.distance)*boatEase;
-      b.heading += Math.atan2(Math.sin(state.heading-b.heading),Math.cos(state.heading-b.heading)) * boatEase;
-      b.root.position.set(b.x, 0, -b.distance);
-      b.root.rotation.set(0,-b.heading,0);
+      const hit=state.contact||state.collisions>b.collisions;
+      const boatEase = hit||race.phase!=='racing' ? 1 : ease;
+      const ahead=race.phase==='racing'&&!hit?Math.min(.1,Math.max(0,(serverNow()-race.serverTime)/1000)):0;
+      b.x += (state.x+state.vx*ahead-b.x) * boatEase;
+      b.distance += (state.distance+state.vy*ahead-b.distance)*boatEase;
+      b.heading += Math.atan2(Math.sin(state.heading+state.angularVelocity*ahead-b.heading),Math.cos(state.heading+state.angularVelocity*ahead-b.heading)) * boatEase;
+      b.roll+=(state.roll-b.roll)*boatEase;
+      b.root.position.set(b.x, reset?0:b.root.position.y, -b.distance);
+      b.root.rotation.set(reset?0:b.root.rotation.x,-b.heading,b.roll);
       if (!reduced && race.phase==='racing') {
         const x=b.root.position.x,z=b.root.position.z,t=now*.001;
         b.root.position.y=waterHeight(x,z,t);
         // Sample the same surface at bow/stern and gunwales, instead of unrelated camera bob.
         const sample=state.length*.4,hx=Math.sin(b.heading)*sample,hz=-Math.cos(b.heading)*sample;
         b.root.rotation.x=(waterHeight(x+hx,z+hz,t)-waterHeight(x-hx,z-hz,t))/(sample*2);
-        const rx=Math.cos(b.heading)*.65,rz=Math.sin(b.heading)*.65;
-        b.root.rotation.z=(waterHeight(x+rx,z+rz,t)-waterHeight(x-rx,z-rz,t))/1.3;
       }
       b.wake.position.copy(b.root.position); b.wake.rotation.y = -b.heading;
       b.wake.visible = state.speed > .2;
