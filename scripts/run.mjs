@@ -7,7 +7,6 @@ import { existsSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
 import { networkInterfaces } from 'node:os';
-import { build } from './build.mjs';
 const production = process.argv.includes('--production');
 const httpPort = Number(process.env.APP_PORT || 8080), wsPort = Number(process.env.WS_PORT || 6020);
 const root = resolve('dist');
@@ -22,7 +21,10 @@ ds.on('exit', code => { if (!stopping) { console.error(`Multiplayer server stopp
 let stopping = false, tunnel, server, secureServer, tunnelStatus='off', publicOrigin=process.env.PUBLIC_ORIGIN||'';
 process.on('SIGINT',()=>stop());process.on('SIGTERM',()=>stop());
 process.on('exit',()=>{tunnel?.kill('SIGTERM');ds.kill('SIGTERM');});
-await build(!production);
+if(process.env.SKIP_BUILD!=='1'){
+ const {build}=await import('./build.mjs');
+ await build(!production);
+}
 const mime = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg':'image/jpeg', '.glb':'model/gltf-binary', '.ktx2':'image/ktx2', '.wasm':'application/wasm', '.woff2': 'font/woff2', '.woff': 'font/woff', '.txt': 'text/plain', '.json': 'application/json', '.map': 'application/json' };
 const handler = async (req, res) => {
   try {

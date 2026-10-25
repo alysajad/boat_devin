@@ -59,6 +59,20 @@ Built for the **Devin Hacks Community Hackathon: Kochi**, held on 24–25 Octobe
    npm run test:e2e
    ```
 
+## Deploy on Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Falysajad%2Fboat_devin)
+
+Vercel builds `Dockerfile.vercel`, runs the web server and Deepstream in one container, and exposes the assigned `PORT`. `vercel.json` enables Fluid compute. No deployment environment variables are required.
+
+You can also deploy from the command line:
+
+```sh
+npx vercel --prod
+```
+
+The current room store lives in process memory. Vercel can restart or scale the container, and WebSocket connections close at the function-duration limit. Either event clears active rooms, so this setup suits demos and hackathon judging. A durable multi-instance deployment needs shared room state and pub/sub, such as Redis, before relying on Vercel autoscaling. See Vercel's [container deployment guide](https://vercel.com/blog/dockerfile-on-vercel) and [WebSocket guidance](https://vercel.com/kb/guide/do-vercel-serverless-functions-support-websocket-connections).
+
 ## How to play
 
 1. The host opens the game on a laptop, configures the boats and shares the room QR code.
@@ -69,7 +83,7 @@ Built for the **Devin Hacks Community Hackathon: Kochi**, held on 24–25 Octobe
 ## Current status
 
 - **Working features:** 2–10 boats, up to 50 players, motion and swipe input, assigned paddle sides, solo assistance, team synchronization, configurable timed or distance races, server-authoritative steering and collisions, pause/resume, rematches, adaptive 3D broadcast graphics, race direction, first-person rower cameras and optional crew audio.
-- **Known limitations:** Rooms live in server memory and disappear after a restart. Cloudflare Quick Tunnel URLs are temporary. Motion controls require HTTPS on physical phones. The broadcast can drop below 60 FPS under a 50-controller load, and physical iPhone/Android venue testing remains outstanding.
+- **Known limitations:** Rooms live in server memory and disappear after a restart or Vercel container replacement. Vercel autoscaling needs shared room state before it is safe for concurrent instances. Cloudflare Quick Tunnel URLs are temporary. Motion controls require HTTPS on physical phones. The broadcast can drop below 60 FPS under a 50-controller load, and physical iPhone/Android venue testing remains outstanding.
 - **Libraries, APIs and public assets:** [p5.party](https://github.com/jbakse/p5.party), [Three.js](https://threejs.org/), [Rapier](https://rapier.rs/), [Deepstream](https://deepstream.io/), [Reef](https://reefjs.com/), [MakeHuman](https://www.makehumancommunity.org/) CC0 crew assets, [Poly Haven](https://polyhaven.com/) CC0 scenery and a CC0 crew call from [Freesound](https://freesound.org/people/Jace/sounds/57204/). Detailed attribution appears in `public/assets/*/CREDITS.txt` and [docs/UPSTREAM.md](docs/UPSTREAM.md).
 
 ## Verification

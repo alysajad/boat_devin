@@ -14,6 +14,7 @@ Devin assisted with:
 - writing and running unit, browser and 50-controller load tests;
 - reviewing screenshots and performance artifacts;
 - drafting project documentation and third-party attribution.
+- preparing and validating the Vercel container deployment configuration.
 
 ## Human contribution and review
 

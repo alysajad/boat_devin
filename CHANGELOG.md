@@ -4,6 +4,7 @@ All notable changes to Devin Hacks during the 24–25 October 2026 hackathon are
 
 ## 25 October 2026
 
+- Added a Vercel container configuration, Fluid compute setting and one-click deployment instructions.
 - Added server-authoritative left/right rowing with yaw, lateral drift, heading recovery and damped boat roll.
 - Added Rapier collision bodies for racing boats, riverbanks and moored houseboats, including continuous collision detection and recoverable impacts.
 - Added assigned-side controller instructions, signed balance feedback and automatic solo assistance after a disconnect.

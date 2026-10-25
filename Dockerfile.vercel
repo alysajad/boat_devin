@@ -1,0 +1,21 @@
+FROM node:24-bookworm-slim AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --no-audit --no-fund
+COPY . .
+RUN npm run build
+
+FROM node:24-bookworm-slim
+WORKDIR /app
+ENV NODE_ENV=production \
+    SKIP_BUILD=1 \
+    WS_PORT=6020 \
+    API_PORT=6120
+COPY package*.json ./
+RUN npm ci --omit=dev --no-audit --no-fund
+COPY --from=build /app/dist ./dist
+COPY app ./app
+COPY conf ./conf
+COPY server ./server
+COPY scripts/run.mjs scripts/multiplayer.mjs ./scripts/
+CMD ["sh", "-c", "APP_PORT=${PORT:-8080} node scripts/run.mjs --production"]
