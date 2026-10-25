@@ -14,7 +14,7 @@ async function setup(page:any){
 test('director has live previews, clickable seat POV, authoritative stroke labels and fullscreen start/exit',async({page})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));const room=await setup(page);
  try{
-  await expect(page.locator('.rower-label')).toHaveCount(3);await expect(page.locator('#race-river>canvas')).toHaveCount(1);
+  await expect(page.locator('#race-river')).toHaveAttribute('data-boat-style','chundan-vallam');await expect(page.locator('.rower-label')).toHaveCount(3);await expect(page.locator('#race-river>canvas')).toHaveCount(1);
   for(const shot of ['overview','side','chase','bow','finish'])await expect(page.locator(`[data-preview=${shot}]`)).toHaveAttribute('data-frame',/\d+/,{timeout:15000});
   await page.getByRole('button',{name:'POV: Asha',exact:true}).click();await expect(page.locator('#race-river')).toHaveAttribute('data-camera','pov');await expect(page.locator('#race-river')).toHaveAttribute('data-camera-player',room.actors[0].session.id);await expect(page.locator('#director-title')).toContainText('Asha');
   const canvas=page.locator('#race-river>canvas'),box=await canvas.boundingBox();await page.mouse.move(box!.x+box!.width/2,box!.y+box!.height/2);await page.mouse.down();await page.mouse.move(box!.x+box!.width/2+80,box!.y+box!.height/2,{steps:5});await page.mouse.up();await expect(page.locator('#race-river')).not.toHaveAttribute('data-look-yaw','0');
@@ -39,15 +39,30 @@ test('director fullscreen fallback can be exited when native fullscreen is refus
 test('clicking a character mesh selects its POV and private feedback cannot be forged or read by another player',async({page})=>{
  const room=await setup(page);
  try{
-  await page.getByRole('button',{name:'Side camera preview',exact:true}).click();await page.waitForTimeout(1200);
+  await page.getByRole('button',{name:'Fullscreen',exact:true}).last().click();
+  await page.getByRole('button',{name:'Side camera preview',exact:true}).click();await page.waitForTimeout(1200);await page.screenshot({path:'artifacts/chundan-side.png'});
   const name=page.getByRole('button',{name:'POV: Riya',exact:true}),box=await name.boundingBox();expect(box).toBeTruthy();await page.mouse.click(box!.x+box!.width/2,box!.y+box!.height+12);await expect(page.locator('#race-river')).toHaveAttribute('data-camera-player',room.actors[2].session.id);
   await expect(page.getByRole('button',{name:'Back to broadcast',exact:true})).toBeVisible();await page.getByRole('button',{name:'Back to broadcast',exact:true}).click();await expect(page.locator('#pov-rower')).toHaveValue('');
   for(const shot of ['chase','bow','overview']){
-   await page.locator('#camera-shot').selectOption(shot);await page.waitForTimeout(1500);
+   await page.locator('#camera-shot').selectOption(shot);await page.waitForTimeout(1500);if(shot==='chase')await page.screenshot({path:'artifacts/chundan-stern.png'});
    const label=page.getByRole('button',{name:'POV: Riya',exact:true}),position=await label.boundingBox();expect(position).toBeTruthy();let hit=false;
    for(let offset=2;offset<=20;offset+=2){await page.mouse.move(position!.x+position!.width/2,position!.y+position!.height+offset);if(await label.getAttribute('data-hovered')==='true'){await page.mouse.click(position!.x+position!.width/2,position!.y+position!.height+offset);hit=true;break;}}
    expect(hit,`Riya is clickable from ${shot}`).toBe(true);await expect(page.locator('#race-river')).toHaveAttribute('data-camera-player',room.actors[2].session.id);await page.getByRole('button',{name:'Back to broadcast',exact:true}).click();
   }
   const {client,session}=room.actors[0],other=room.actors[1].session,errors:string[]=[];client.on('error',(e:any)=>errors.push(String(e)));client.event.subscribe(`race_v3-${room.code}/rowing`,()=>{});client.event.subscribe(`race_v3-${room.code}/feedback/${other.id}`,()=>{});client.event.emit(`race_v3-${room.code}/feedback/${session.id}`,{kind:'stroke',id:session.id,round:1,strokes:999,at:Date.now()});await expect.poll(()=>errors.length).toBeGreaterThanOrEqual(3);
+ }finally{room.close();}
+});
+
+test('Chundan seats a full 25-person crew and keeps the last rower POV usable',async({page})=>{
+ const room=await setup(page);
+ try{
+  for(let i=3;i<=25;i++){
+   const session=await api('join',{code:room.code,name:`Crew ${i}`,team:'boat-1'}),client=new DeepstreamClient(base.replace(/^http/,'ws')+'/deepstream');client.on('error',()=>{});await client.login({username:`race_v3-${room.code}/${session.id}`,token:session.token});room.actors.push({session,client});
+  }
+  for(const {session}of room.actors){await api('command',{action:'controller',mode:'swipe'},session);await api('command',{action:'ready',ready:true},session);}
+  await page.locator('[data-action=start]').click();await expect(page.locator('#phase-label')).toHaveText('RACE IS ON',{timeout:12000});await expect(page.locator('#renderer-notice')).toBeHidden({timeout:30000});await expect(page.locator('.rower-label')).toHaveCount(26);
+  await page.locator('#follow-camera').selectOption('boat-1');await page.locator('#camera-shot').selectOption('side');await page.waitForTimeout(1500);await page.screenshot({path:'artifacts/chundan-full-crew.png'});
+  const last=room.actors.at(-1).session;await page.locator('#pov-rower').selectOption(last.id);await expect(page.locator('#race-river')).toHaveAttribute('data-camera-player',last.id);await expect(page.locator('#director-title')).toContainText('Crew 25');await page.screenshot({path:'artifacts/chundan-last-seat.png'});
+  await page.getByRole('button',{name:'Back to broadcast',exact:true}).click();await expect(page.locator('#pov-rower')).toHaveValue('');
  }finally{room.close();}
 });

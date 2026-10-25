@@ -2,6 +2,18 @@
 
 Implemented portrait motion/swipe controllers, configurable motion sensitivity and rowing force, automatic crew growth, fixed courses, synchronized crew propulsion, distance/timed races, broadcast direction and an HTTPS event launcher. Protocol 2 rooms must be replaced.
 
+## Chundan Vallam / Onam boat rebuild — follow-up
+
+Replaced the short canoe with an original procedural Chundan Vallam-inspired shell: narrow varnished timber hull, low pointed bow, tall curved stern, fitted deck boards, brass rails, team-colour inlays and floral garlands. Rowers now sit in paired benches, with light shorts and compact name labels for large crews. High quality adds soft directional shadows; lower quality retains contact shading. The design is game-scaled to 14–22.35 m for 1–25 participants; it is not an exact replica of a particular traditional boat. [Design references and implementation details](../README.md#laptop-broadcast).
+
+The server and renderer share the longer hull length, so visible bow crossings still match authoritative results. Starting crew size, frozen seats and normalized propulsion are preserved. Updating the server requires fresh rooms/QR codes.
+
+- TypeScript and production build pass; all **39 game tests** pass. New geometry checks cover finite surface data, closed mesh edges, bow/stern profile and paired seating for every crew size from one to 25. Existing authority tests cover bow crossings, ties, normalization and disconnects. [Unit log](../artifacts/chundan-unit.log).
+- **11 distinct Chromium scenarios** pass across the race/director suite and final additions. This includes character clicking from four angles, native/fullscreen fallback, POV return, swipe/motion races, disconnect/rematch, and a full 25-person crew with last-seat POV. [Race/director run](../artifacts/chundan-browser.log), [four final director scenarios](../artifacts/chundan-director-final.log), [final dense-label/full-crew check](../artifacts/chundan-full-crew-check.log).
+- A **60-second local load window** with 50 controllers, 10 boats and a fullscreen rendered broadcast completed two rounds: 53 connections, 2,700 acknowledged strokes, **113.11 ms acknowledgment P95**, **3.16 ms worst sampled server-step P95**, and no reported errors (72 seconds including setup). FPS samples were **60, 60, 60, 60, 60, 58, 6, 21, 30**. Soft shadows were active at high quality; adaptive quality reduced them to contact shading. The rematch/loading dip remains, so this does **not** establish a stable 30/60 FPS minimum or UHD performance. [Result](../artifacts/chundan-load.json), [log](../artifacts/chundan-load.log), [broadcast](../artifacts/chundan-load-broadcast.png). The final compact-name-label adjustment affects crews larger than eight; it does not change this ten-boat/five-rower workload.
+
+Visual review: [full crew](../artifacts/chundan-full-crew.png), [side profile](../artifacts/chundan-side.png), [raised stern](../artifacts/chundan-stern.png), [last rower POV](../artifacts/chundan-last-seat.png). No physical-phone or tunnel readiness claim is added by this graphics pass; the earlier limits below still apply. The 15-minute endurance run was not repeated for this follow-up.
+
 ## Graphics polish and reliable character selection — follow-up
 
 The river now uses softer crossed ripples with distance fading, a blue atmospheric sky, blended wakes and hull contact shading, warmer timber, and layered foliage/shore plants. These reuse the existing renderer and instanced scenery; phones still do not load the scene.

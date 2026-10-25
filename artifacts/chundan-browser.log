@@ -1,0 +1,17 @@
+
+Running 10 tests using 1 worker
+
+(node:101654) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 game-tests/director.spec.ts:14:5 › director has live previews, clickable seat POV, authoritative stroke labels and fullscreen start/exit (27.6s)
+  ✓   2 game-tests/director.spec.ts:34:5 › director fullscreen fallback can be exited when native fullscreen is refused (1.9s)
+  ✓   3 game-tests/director.spec.ts:39:5 › clicking a character mesh selects its POV and private feedback cannot be forged or read by another player (8.3s)
+  ✓   4 game-tests/event.spec.ts:7:5 › solo phones row, pause, release disconnected seats, rematch; broadcast manual cameras and fullscreen (25.2s)
+  ✓   5 game-tests/event.spec.ts:20:5 › admin settings, automatic crew growth, move and remove (10.3s)
+  ✓   6 game-tests/event.spec.ts:26:5 › capabilities reject cross-room reads, detailed player feeds, state writes and forged events (1.1s)
+  ✓   7 game-tests/event.spec.ts:33:5 › broadcast WebGL refusal keeps the room usable (1.9s)
+  ✓   8 game-tests/event.spec.ts:36:5 › a changed server boot ID ends the old session explicitly (3.7s)
+  ✓   9 game-tests/event.spec.ts:38:5 › swipe practice gives feedback, Ready waits for host, refresh removes the old rower (4.0s)
+  ✓  10 game-tests/event.spec.ts:49:5 › calibrated sideways motion practices in the lobby and propels a racing boat (27.4s)
+
+  10 passed (1.9m)

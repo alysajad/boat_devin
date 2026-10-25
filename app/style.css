@@ -170,3 +170,6 @@ html:fullscreen,html:fullscreen body{width:100%;height:100%;overflow:hidden;back
 .rower-label[data-hovered=true]{opacity:1;background:#123047ed;outline:2px solid var(--rower-color);outline-offset:3px}
 .director-hud [data-action=leave-pov]{border-color:#f3cf8b;color:#ffe3af;opacity:.95}
 #race-river>canvas{touch-action:none}
+
+.rower-label[data-dense=true]{max-width:48px;padding:3px 4px;font-size:9px}
+.rower-label[data-dense=true]:is(:hover,:focus-visible,[data-hovered=true]){max-width:160px;z-index:2}

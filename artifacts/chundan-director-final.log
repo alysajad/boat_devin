@@ -1,0 +1,11 @@
+
+Running 4 tests using 1 worker
+
+(node:102608) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 game-tests/director.spec.ts:14:5 › director has live previews, clickable seat POV, authoritative stroke labels and fullscreen start/exit (22.8s)
+  ✓  2 game-tests/director.spec.ts:34:5 › director fullscreen fallback can be exited when native fullscreen is refused (4.6s)
+  ✓  3 game-tests/director.spec.ts:39:5 › clicking a character mesh selects its POV and private feedback cannot be forged or read by another player (13.1s)
+  ✓  4 game-tests/director.spec.ts:56:5 › Chundan seats a full 25-person crew and keeps the last rower POV usable (9.5s)
+
+  4 passed (50.9s)

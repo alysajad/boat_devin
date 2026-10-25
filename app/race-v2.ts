@@ -16,8 +16,8 @@ export type Snapshot = Pick<Race,'phase'|'remaining'|'countdown'|'revision'|'rou
 export type ControllerStatus = Pick<Race,'phase'|'remaining'|'countdown'|'revision'|'round'|'serverTime'|'elapsed'> & { boats: Record<string, Pick<Boat,'progress'|'speed'|'sync'|'finishTime'>>; players: Pick<Player,'id'|'strokes'|'cadence'>[] };
 export type Session = { code: string; token: string; id: string; role: 'admin'|'player'|'watch'; waiting?: boolean; bootId: string; name: string };
 export const COLORS = ['#ed684f','#e9bd54','#53b4b0','#7897df','#b993cf','#c2c573','#eaa17e','#87bdb1','#b8a8e8','#d990ab'];
-export const boatLength = (crew: number) => Math.max(5.5, 4 + .85 * crew);
-export const crewSeatZ = (index: number, count: number) => (index - (count - 1) / 2) * .85;
+export const boatLength = (crew: number) => Math.max(14, 10 + .95 * Math.ceil(crew / 2));
+export const crewSeatZ = (index: number, count: number) => (Math.floor(index / 2) - (Math.ceil(count / 2) - 1) / 2) * .95;
 export const defaultConfig = (count=2,seats=1):BoatConfig[] => Array.from({length:count},(_,i)=>({id:`boat-${i+1}`,name:i===0?'Coral crew':i===1?'Golden crew':`Crew ${i+1}`,color:COLORS[i],seats}));
 export function configError(value: unknown):string {
   if(!Array.isArray(value)||value.length<2||value.length>10)return 'Configure between 2 and 10 boats.';

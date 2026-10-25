@@ -1,9 +1,10 @@
+import { chundanSection, createChundanHull } from './chundan';
 import { Director } from './director';
 import * as THREE from 'three';
 import {KTX2Loader} from 'three/addons/loaders/KTX2Loader.js';
 import { crewSeatZ, rankings, type Race, type Team, type Player, type Side } from './race-v2';
 import { loadCrew, createCrew } from './crew';
-import { HULL, LOG_HALF_LENGTH, LOG_RADIUS, WATER_LEVEL } from './world';
+import { LOG_HALF_LENGTH, LOG_RADIUS, WATER_LEVEL } from './world';
 import { createScenery, type SceneQuality } from './scenery';
 import { paddlePose, waterHeight, STROKE_SECONDS, PADDLE_LEAN } from './rowing';
 
@@ -26,7 +27,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   let renderer: THREE.WebGLRenderer | undefined;
   let compressed: KTX2Loader | undefined;
   let observer: ResizeObserver | undefined;
-  let previewTarget:THREE.WebGLRenderTarget|undefined,removePicking=()=>{};
+  let previewTarget:THREE.WebGLRenderTarget|undefined,removePicking=()=>{},releaseShadows=()=>{};
   let graphicsPreference=options.graphics?.()||'auto';
   const selectedPlayer=()=>options.povPlayer?.()||(options.view==='player'?options.playerId:'');
   const serverNow=()=>options.serverNow?.()??Date.now();
@@ -53,7 +54,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
 
   function releaseGPU() {
     cancelAnimationFrame(frame);
-    removePicking();previewTarget?.dispose();previewTarget=undefined;
+    releaseShadows();removePicking();previewTarget?.dispose();previewTarget=undefined;
     observer?.disconnect();
     renderer?.domElement.removeEventListener('webglcontextlost', contextLost);
     renderer?.domElement.remove();
@@ -135,6 +136,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.domElement.setAttribute('role', 'img');
   renderer.domElement.setAttribute('aria-label', options.view === 'player' ? 'Seated first-person view from your crew boat on a Kerala river. Your hands and paddle are visible.' : 'Elevated live broadcast view of both crew boats on a palm-lined Kerala river.');
   renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;';
@@ -160,7 +162,11 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   scene.add(new THREE.HemisphereLight('#d9efff', '#5c6145', 2.05));
   const sunlight = new THREE.DirectionalLight('#ffdfaf', 2.45);
   sunlight.position.set(-35, 50, -30);
-  scene.add(sunlight);
+  sunlight.castShadow=true;sunlight.shadow.mapSize.set(2048,2048);
+  Object.assign(sunlight.shadow.camera,{left:-42,right:42,top:55,bottom:-55,near:1,far:160});
+  sunlight.shadow.bias=-.00015;sunlight.shadow.normalBias=.025;sunlight.shadow.autoUpdate=false;sunlight.shadow.needsUpdate=true;
+  releaseShadows=()=>sunlight.shadow.dispose();scene.add(sunlight,sunlight.target);let shadowAt=0;
+
   function geometry<T extends THREE.BufferGeometry>(g: T): T { geometries.add(g); return g; }
   function material(color: string, roughness = .85) {
     const m = new THREE.MeshStandardMaterial({ color, roughness, metalness: 0 }); materials.add(m); return m;
@@ -246,7 +252,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
         vec3 eye=normalize(cameraPosition-world);float fresnel=.08+.78*pow(1.-max(dot(normal,eye),0.),4.);
         vec3 reflection=reflect(-eye,normal);
         vec3 reflected=mix(vec3(.40,.59,.56),vec3(.19,.46,.61),max(0.,reflection.y));
-        vec3 color=mix(vec3(.018,.16,.13),reflected,fresnel);
+        vec3 color=mix(vec3(.025,.12,.085),reflected,fresnel);
         vec3 sun=normalize(vec3(-.5,.8,-.35));vec3 halfVector=normalize(sun+eye);
         float highlight=pow(max(dot(normal,halfVector),0.),160.);
         color+=vec3(.95,.81,.51)*highlight*.48;
@@ -281,19 +287,9 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   const collisionGeo = geometry(new THREE.RingGeometry(.88, 1, 32));
   const collisionMat = new THREE.MeshBasicMaterial({ color: '#ff9b56', transparent: true, opacity: .8, depthWrite: false, side: THREE.DoubleSide });
   materials.add(collisionMat);
-  // The outer top contour is exactly the shared collision polygon, including pointed ends.
-  const hullShape = new THREE.Shape();
-  HULL.forEach(([x, z], i) => i ? hullShape.lineTo(x, z) : hullShape.moveTo(x, z)); hullShape.closePath();
-  const hullGeo = geometry(new THREE.ExtrudeGeometry(hullShape, { depth: .16, bevelEnabled: false })); hullGeo.rotateX(Math.PI / 2);
-  const sideVertices: number[] = [];
-  for (let i = 0; i < HULL.length; i++) {
-    const [x, z] = HULL[i], [nx, nz] = HULL[(i + 1) % HULL.length];
-    sideVertices.push(x,.44,z, nx,.44,nz, nx*.7,-.32,nz*.97, x,.44,z, nx*.7,-.32,nz*.97, x*.7,-.32,z*.97);
-  }
-  const hullSides = geometry(new THREE.BufferGeometry()); hullSides.setAttribute('position', new THREE.Float32BufferAttribute(sideVertices, 3)); hullSides.computeVertexNormals();
-  const sideUV: number[]=[];for(let i=0;i<sideVertices.length;i+=3)sideUV.push(sideVertices[i+2]*.3,sideVertices[i+1]);
-  hullSides.setAttribute('uv',new THREE.Float32BufferAttribute(sideUV,2));
-  const sideMaterial = wood.clone(); sideMaterial.side = THREE.DoubleSide; materials.add(sideMaterial);
+  const hullGeo=geometry(createChundanHull());
+  const sideMaterial=wood.clone();sideMaterial.side=THREE.DoubleSide;sideMaterial.roughness=.32;materials.add(sideMaterial);
+  const garlandGold=material('#f5ae25',.8),garlandIvory=material('#fff4ce',.85);
   // Local photographed surfaces load only in a room. Existing materials render immediately.
   let surfaceAssets = 0;
   const surfaceLoads: Promise<unknown>[]=[];
@@ -312,7 +308,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   loadSurface('wood-color.jpg', true, texture => {
     texture.repeat.set(1, 2);
     [wood,deck,trim,sideMaterial].forEach((m,i)=>{
-      m.map=texture;m.color.set(['#c8a77d','#fff1d6','#f6d69e','#c8a77d'][i]);m.roughness=i===0||i===3?.45:.58;m.bumpMap=null;m.needsUpdate=true;
+      m.map=texture;m.color.set(['#805a35','#e1b77d','#f2d39a','#66523f'][i]);m.roughness=i===3?.30:i===0?.42:.60;m.bumpMap=null;m.needsUpdate=true;
     });
   });
   loadSurface('wood-normal.jpg', false, texture => {
@@ -323,8 +319,6 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     texture.repeat.set(8,90);
     for(const m of [grass,sand]){m.map=texture;m.needsUpdate=true;}
   });
-  // Round rail sections follow the same curved outline used by collision detection.
-  const railSegments = HULL.map(([x,z], i) => { const [nx,nz] = HULL[(i+1)%HULL.length]; return { x, z, nx, nz }; });
   const bladeShape = new THREE.Shape(); bladeShape.moveTo(0,.25); bladeShape.bezierCurveTo(.08,.18,.15,-.03,.1,-.24); bladeShape.quadraticCurveTo(0,-.34,-.1,-.24); bladeShape.bezierCurveTo(-.15,-.03,-.08,.18,0,.25);
   const bladeGeo = geometry(new THREE.ExtrudeGeometry(bladeShape, { depth: .025, bevelEnabled: true, bevelThickness: .008, bevelSize: .012, bevelSegments: 1, curveSegments: 5 }));
   const armA = new THREE.Vector3(), armB = new THREE.Vector3(), elbow = new THREE.Vector3();
@@ -335,29 +329,40 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     const root = new THREE.Group(); dynamicRoot.add(root);
     const length=initial.boats[team].length, capacity=initial.boats[team].crewCount;
     node(root,wakeGeo,hullShade,0,WATER_LEVEL+.006,0,2.6,length*1.08,1).rotation.x=-Math.PI/2;
-    const hull = new THREE.Group(); hull.scale.set(1.65/1.48,1,length/9.8);root.add(hull);
-    node(hull, hullGeo, wood, 0, .19, 0, 1, 1, 1);
-    node(hull, hullSides, sideMaterial, 0, 0, 0, 1, 1, 1);
-    for (const rail of railSegments) {
-      const beam=node(hull,cylinder,teamMaterials[team],0,0,0,1,1,1);
-      segment(beam,new THREE.Vector3(rail.x*.955,.455,rail.z*.992),new THREE.Vector3(rail.nx*.955,.455,rail.nz*.992),.033);
-    }
-    for (let j=0;j<7;j++) node(hull,box,j%2?deck:trim,(j-3)*.155,.225,0,.147,.055,6.1);
-    for (let j=0;j<10;j++) {
-      const z=-3.15+j*.68, width=.63-Math.abs(z)*.025;
-      node(hull,box,wood,0,.265,z,width*2,.055,.055);
-      for (const side of [-1,1]) {
-        const rib=node(hull,box,deck,side*width,.35,z,.045,.23,.065);rib.rotation.z=-side*.22;
-        node(hull,sphere,brass,side*(width-.02),.455,z,.025,.012,.025);
+    const hull=new THREE.Group();root.add(hull);
+    node(hull,hullGeo,sideMaterial,0,0,0,1,1,length/2);
+    // Fine brass caps and a slim team-colour inlay follow the raised stern.
+    for(let j=0;j<64;j++){
+      const u=j/64*2-1,v=(j+1)/64*2-1,a=chundanSection(u),b=chundanSection(v);
+      for(const side of [-1,1]){
+        const rail=node(hull,cylinder,brass,0,0,0,1,1,1);
+        segment(rail,new THREE.Vector3(side*a.width,a.rim,u*length/2),new THREE.Vector3(side*b.width,b.rim,v*length/2),.018);
+        const inlay=node(hull,cylinder,teamMaterials[team],0,0,0,1,1,1);
+        segment(inlay,new THREE.Vector3(side*(a.width+.008),a.rim-.075,u*length/2),new THREE.Vector3(side*(b.width+.008),b.rim-.075,v*length/2),.021);
       }
     }
-    // Bow ornament and slender flag provide a stable forward reference.
-    node(hull, cylinder, trim, 0, .85, -4.35, .035, 1.3, .035);
-    const flag = node(hull, box, teamMaterials[team], .24, 1.38, -4.35, .48, .24, .025); flag.rotation.z = -.1;
+    // Individually fitted deck boards and cross ribs make the long timber hull legible.
+    const boards=Math.ceil(length/.38);
+    for(let j=0;j<boards;j++){
+      const u=-.93+j/(boards-1)*1.86,section=chundanSection(u),width=section.width*.84;
+      const plank=node(hull,box,deck,0,.205+section.rise,u*length/2,width*2,.045,length*1.86/(2*boards)-.015);
+      const ahead=chundanSection(Math.min(.999,u+.005));plank.rotation.x=-Math.atan2(ahead.rise-section.rise,length*.0025);
+      if(j%2===0&&Math.abs(u)<.76){node(hull,box,wood,0,.29,u*length/2,width*2,.055,.055);for(const side of [-1,1])node(hull,sphere,brass,side*(width-.035),.32,u*length/2,.018,.012,.018);}
+    }
+    // Onam floral accents frame the high tail without covering the rowers or the bow.
+    for(const side of [-1,1])for(let j=0;j<18;j++){
+      const u=.78+j/17*.20,section=chundanSection(u);
+      node(hull,sphere,j%4===0?garlandIvory:garlandGold,side*(section.width+.025),section.rim-.14,u*length/2,.052,.055,.05);
+    }
+    const bow=chundanSection(-.985);
+    node(hull,cylinder,brass,0,bow.rim+.28,-length*.4925,.018,.58,.018);
+    const flagGeometry=geometry(new THREE.BufferGeometry());flagGeometry.setAttribute('position',new THREE.Float32BufferAttribute([0,0,0,.42,-.10,0,0,-.22,0],3));flagGeometry.computeVertexNormals();
+    const flagMaterial=teamMaterials[team].clone();flagMaterial.side=THREE.DoubleSide;materials.add(flagMaterial);
+    node(hull,flagGeometry,flagMaterial,0,bow.rim+.56,-length*.4925,1,1,1);
     const crew: Crew[] = [];
     for (let i = 0; i < capacity; i++) {
-      node(root, box, deck, 0, .47, crewSeatZ(i, capacity) + .13, 1.3, .075, .26);
-      node(root, contactGeo, contactShade, 0, .513, crewSeatZ(i, capacity) + .13, .36, .11, 1).rotation.x = -Math.PI / 2;
+      if(i%2===0)node(root, box, deck, 0, .47, crewSeatZ(i, capacity) + .13, 1.3, .075, .26);
+      node(root, contactGeo, contactShade, capacity===1?0:(i%2?1:-1)*.36, .513, crewSeatZ(i, capacity) + .13, .36, .11, 1).rotation.x = -Math.PI / 2;
       const person = new THREE.Group(); root.add(person);
       const paddle = new THREE.Group(); person.add(paddle);
       node(paddle, cylinder, trim, 0, 0, 0, .024, 1.85, .024);
@@ -397,6 +402,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     const batches: {mesh:THREE.InstancedMesh;sources:THREE.Mesh[]}[]=[];
     for(const sources of groups.values()) {
       const mesh=new THREE.InstancedMesh(sources[0].geometry,sources[0].material,sources.length);
+      mesh.castShadow=!(sources[0].material as THREE.Material).transparent;mesh.receiveShadow=true;
       mesh.count=0;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mesh.frustumCulled=false;
       sources.forEach(source=>source.layers.set(1));scene.add(mesh);batches.push({mesh,sources});
     }
@@ -431,7 +437,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     if (nextKey === rosterKey) return;
     rosterKey = nextKey;
     for(const [id,label]of rowerLabels)if(!race.players.some(p=>p.id===id)){label.remove();rowerLabels.delete(id);}
-    for(const p of race.players){let label=rowerLabels.get(p.id);if(!label){label=document.createElement('button');label.className='rower-label';label.dataset.player=p.id;label.addEventListener('click',()=>options.selectPlayer?.(p.id));labels.append(label);rowerLabels.set(p.id,label);}label.textContent=p.name;label.setAttribute('aria-label',`POV: ${p.name}`);label.style.setProperty('--rower-color',race.config.find(c=>c.id===p.team)!.color);}
+    for(const p of race.players){let label=rowerLabels.get(p.id);if(!label){label=document.createElement('button');label.className='rower-label';label.dataset.player=p.id;label.addEventListener('click',()=>options.selectPlayer?.(p.id));labels.append(label);rowerLabels.set(p.id,label);}label.textContent=p.name;label.title=`${p.name} · enter first person`;label.dataset.dense=String(race.boats[p.team].crewCount>8);label.setAttribute('aria-label',`POV: ${p.name}`);label.style.setProperty('--rower-color',race.config.find(c=>c.id===p.team)!.color);}
 
     for (const team of teams) {
       const players = race.players.filter(p => p.team === team);
@@ -440,7 +446,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
         crew.root.visible = !!player;
         crew.playerId = player?.id ?? '';
         crew.side = player?.side === 'right' ? 1 : -1;
-        crew.root.position.set(race.boats[team].crewCount===1?0:crew.side * .22, 0, crewSeatZ(i, race.boats[team].crewCount));
+        crew.root.position.set(race.boats[team].crewCount===1?0:crew.side * .36, 0, crewSeatZ(i, race.boats[team].crewCount));
 
         crew.strokes = player?.strokes ?? 0;
         crew.at = player?.strokes?now-Math.max(0,serverNow()-player.lastStroke):-Infinity;
@@ -487,7 +493,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   function setPOV(cam:THREE.PerspectiveCamera,player:Player,race:Race){
     const boat=boats[player.team];
     if(cam.fov!==72){cam.fov=72;cam.updateProjectionMatrix();}
-    cameraPoint.set(race.boats[player.team].crewCount===1?0:(player.side==='left'?-1:1)*.22,1.38,crewSeatZ(player.seat,race.boats[player.team].crewCount)+.035);
+    cameraPoint.set(race.boats[player.team].crewCount===1?0:(player.side==='left'?-1:1)*.36,1.38,crewSeatZ(player.seat,race.boats[player.team].crewCount)+.035);
     boat.root.updateMatrixWorld(true);cam.position.copy(boat.root.localToWorld(cameraPoint));boat.root.getWorldQuaternion(boatQuaternion);
     lookEuler.set(pitch-.13,yaw,0);lookQuaternion.setFromEuler(lookEuler);cam.quaternion.copy(boatQuaternion).multiply(lookQuaternion);
   }
@@ -497,11 +503,11 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     const midpoint=tracked.reduce((sum,b)=>sum+b.distance,0)/tracked.length,centerX=tracked.reduce((sum,b)=>sum+b.x,0)/tracked.length;
     const separation=Math.max(...tracked.map(b=>b.distance))-Math.min(...tracked.map(b=>b.distance));
     if(cam===camera){(scene.fog as THREE.Fog).near=65+separation*.7;(scene.fog as THREE.Fog).far=190+separation*.9;}
-    const width=Math.max(14,Math.max(...tracked.map(b=>b.x))-Math.min(...tracked.map(b=>b.x))+12),spread=Math.max(20,separation+15,width/cam.aspect);
+    const width=Math.max(14,Math.max(...tracked.map(b=>b.x))-Math.min(...tracked.map(b=>b.x))+12),spread=Math.max(24,separation+Math.max(...teams.map(id=>race.boats[id].length)),width/cam.aspect);
     cameraPoint.set(centerX+8,15+spread*.46,-midpoint+18+spread*.38);cameraTarget.set(centerX,0,-midpoint-2);let anchor=midpoint;
     if(shot!=='overview'){
       anchor=target.distance;cameraTarget.set(target.x,0,-target.distance);const length=race.boats[boatId]?.length||6;
-      if(shot==='side')cameraPoint.set(target.x+20,9,-target.distance+3);
+      if(shot==='side')cameraPoint.set(target.x+Math.max(20,length*1.1),Math.max(7,length*.30),-target.distance+3);
       if(shot==='chase')cameraPoint.set(target.x+4,7,-target.distance+length*.5+12);
       if(shot==='bow')cameraPoint.set(target.x+3,4,-target.distance-length*.5-12);
       if(shot==='finish'){cameraPoint.set(race.riverWidth*.4,12,-race.settings.distance-5);cameraTarget.set(0,0,-race.settings.distance+8);anchor=race.settings.distance;}
@@ -607,7 +613,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     finish.visible=race.settings.format==='distance';finish.position.set(0,.06,-race.settings.distance);
     camera.updateMatrixWorld();
     if(now>=labelsAt){labelsAt=now+80;
-    for(const p of race.players){const label=rowerLabels.get(p.id)!,crew=boats[p.team]?.crew.find(c=>c.playerId===p.id);if(!crew){label.hidden=true;continue;}crew.root.getWorldPosition(projected);projected.y+=1.65;projected.project(camera);label.hidden=p.id===selectedPlayer()||Math.abs(projected.x)>1||Math.abs(projected.y)>1||Math.abs(projected.z)>1;label.style.left=`${(projected.x+1)*50}%`;label.style.top=`${(1-projected.y)*50}%`;label.dataset.active=String(p.strokes>0&&serverNow()-p.lastStroke<350);label.dataset.strokes=String(p.strokes);}
+    for(const p of race.players){const label=rowerLabels.get(p.id)!,crew=boats[p.team]?.crew.find(c=>c.playerId===p.id);if(!crew){label.hidden=true;continue;}crew.root.getWorldPosition(projected);projected.y+=1.65;projected.project(camera);label.hidden=p.id===selectedPlayer()||Math.abs(projected.x)>1||Math.abs(projected.y)>1||Math.abs(projected.z)>1;label.style.left=`${(projected.x+1)*50}%`;label.style.top=`calc(${(1-projected.y)*50}% - ${p.side==='left'&&race.boats[p.team].crewCount>1?22:0}px)`;label.dataset.active=String(p.strokes>0&&serverNow()-p.lastStroke<350);label.dataset.strokes=String(p.strokes);}
     for(const [id,label]of labelMap){const b=boats[id];projected.set(b.x,2.5,-b.distance).project(camera);label.hidden=projected.z>1||projected.z< -1;label.style.left=`${Math.max(6,Math.min(94,(projected.x+1)*50))}%`;label.style.top=`${Math.max(6,Math.min(90,(1-projected.y)*50))}%`;}
 
     }
@@ -626,6 +632,9 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     dynamicBatches.update();
     waterMaterial.uniforms.fogNear.value=(scene.fog as THREE.Fog).near;
     waterMaterial.uniforms.fogFar.value=(scene.fog as THREE.Fog).far;
+    sunlight.shadow.intensity=quality==='high'?.65:0;
+    if(quality==='high'&&now>=shadowAt){shadowAt=now+66;sunlight.target.position.set(0,0,-anchor);sunlight.position.set(-35,50,-anchor-30);sunlight.target.updateMatrixWorld();sunlight.shadow.needsUpdate=true;}
+    element.dataset.shadows=quality==='high'?'soft':'contact';
     renderer!.render(scene, camera);
     updatePreview(now,race);
     element.dataset.animatedCrew=String(animatedCrew);element.dataset.renderFrames=String(++renderFrames);
@@ -662,7 +671,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
       crew.model=createCrew(source,initial.config.find(c=>c.id===team)!.color,own);crewModels.push(crew.model);crew.root.add(crew.model.root);
       pose(crew,options.getRace()?.players.find(p=>p.id===crew.playerId),performance.now());
     }
-    element.dataset.crewAsset='anatomical-rig';await Promise.all([...surfaceLoads,scenery?.ready]);if(disposed||failed)return;await renderer!.compileAsync(scene,camera);if(disposed||failed)return;if(previewTarget){renderer!.setRenderTarget(previewTarget);const warming=renderer!.compileAsync(scene,previewCamera);renderer!.setRenderTarget(null);await warming;}if(!disposed&&!failed){lastTime=fpsTime=performance.now();fpsFrames=costTotal=slowWindows=fastWindows=0;quality=graphicsPreference==='performance'||mobile?'medium':'high';resize();resolveReady();}
+    element.dataset.boatStyle='chundan-vallam';element.dataset.crewAsset='anatomical-rig';await Promise.all([...surfaceLoads,scenery?.ready]);if(disposed||failed)return;await renderer!.compileAsync(scene,camera);if(disposed||failed)return;if(previewTarget){renderer!.setRenderTarget(previewTarget);const warming=renderer!.compileAsync(scene,previewCamera);renderer!.setRenderTarget(null);await warming;}if(!disposed&&!failed){lastTime=fpsTime=performance.now();fpsFrames=costTotal=slowWindows=fastWindows=0;quality=graphicsPreference==='performance'||mobile?'medium':'high';resize();resolveReady();}
   }).catch(error=>{console.error('Crew asset:',error);useFallback('Crew assets could not load. Showing the live river map; reload to retry 3D.');});
   document.addEventListener('visibilitychange',onVisibility);
   if(!document.hidden) frame = requestAnimationFrame(render);

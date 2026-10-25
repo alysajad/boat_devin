@@ -7,7 +7,7 @@ export function loadCrew(){return source??=Promise.all(['rower.glb','rower-low.g
 const up=new THREE.Vector3(0,1,0);
 function createRig(source:THREE.Group,color:string,own:boolean){
  const root=clone(source),bones=new Map<string,THREE.Bone>(),meshes:THREE.SkinnedMesh[]=[],owned:THREE.Material[]=[];
- root.traverse(o=>{if(o instanceof THREE.Bone)bones.set(o.name.replace(/([LR])$/,'.$1'),o);if(o instanceof THREE.SkinnedMesh){meshes.push(o);o.frustumCulled=false;const m=o.material as THREE.MeshStandardMaterial;if(m.name==='jersey'){o.material=m.clone();(o.material as THREE.MeshStandardMaterial).color.set(color);owned.push(o.material);}}});
+ root.traverse(o=>{if(o instanceof THREE.Bone)bones.set(o.name.replace(/([LR])$/,'.$1'),o);if(o instanceof THREE.SkinnedMesh){meshes.push(o);o.frustumCulled=false;o.castShadow=true;o.receiveShadow=true;const m=o.material as THREE.MeshStandardMaterial;if(m.name==='jersey'||m.name==='shorts'){o.material=m.clone();(o.material as THREE.MeshStandardMaterial).color.set(m.name==='jersey'?color:'#efe8d2');owned.push(o.material);}}});
  const pelvis=bones.get('root')!;pelvis.position.y-=.32;
  for(const suffix of ['L','R']){
   bones.get('upperleg01.'+suffix)!.rotation.x=Math.PI*.43;
@@ -57,7 +57,7 @@ export function createCrew(source:{high:THREE.Group;low:THREE.Group},color:strin
   if(low||own)return;const model=createRig(source.low,color,false);low=new THREE.Group();
   const shoulders=[new THREE.Vector3(-.22,1.06,-.04),new THREE.Vector3(.22,1.06,-.04)];
   model.pose(shoulders,[new THREE.Vector3(-.34,.91,-.29),new THREE.Vector3(-.07,1.27,-.38)]);model.root.updateMatrixWorld(true);
-  const point=new THREE.Vector3();for(const skinned of model.meshes){skinned.skeleton.update();const geometry=skinned.geometry.clone(),p=geometry.getAttribute('position');for(let i=0;i<p.count;i++){point.fromBufferAttribute(p,i);skinned.applyBoneTransform(i,point);p.setXYZ(i,point.x,point.y,point.z);}geometry.computeVertexNormals();const material=(skinned.material as THREE.Material).clone(),mesh=new THREE.Mesh(geometry,material);mesh.applyMatrix4(skinned.matrixWorld);low.add(mesh);lowGeometry.push(geometry);lowMaterials.push(material);}model.dispose();
+  const point=new THREE.Vector3();for(const skinned of model.meshes){skinned.skeleton.update();const geometry=skinned.geometry.clone(),p=geometry.getAttribute('position');for(let i=0;i<p.count;i++){point.fromBufferAttribute(p,i);skinned.applyBoneTransform(i,point);p.setXYZ(i,point.x,point.y,point.z);}geometry.computeVertexNormals();const material=(skinned.material as THREE.Material).clone(),mesh=new THREE.Mesh(geometry,material);mesh.applyMatrix4(skinned.matrixWorld);mesh.castShadow=true;mesh.receiveShadow=true;low.add(mesh);lowGeometry.push(geometry);lowMaterials.push(material);}model.dispose();
  }
  return {root,pose:rig.pose,setFirstPerson:rig.setFirstPerson,setDetail(active:boolean){active||=own;if(active===near)return;near=active;if(active){if(low)root.remove(low);root.add(rig.root);}else{freeze();root.remove(rig.root);if(low)root.add(low);}},dispose(){rig.dispose();lowGeometry.forEach(g=>g.dispose());lowMaterials.forEach(m=>m.dispose());}};
 }
