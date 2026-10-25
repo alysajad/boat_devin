@@ -1,0 +1,8 @@
+
+Running 1 test using 1 worker
+
+(node:110879) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 game-tests/director.spec.ts:70:5 › broadcast crew calls follow accepted strokes, coalesce teammates, mute, and expose the 90 FPS target (17.8s)
+
+  1 passed (18.4s)

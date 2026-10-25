@@ -1,4 +1,5 @@
 import { chundanSection, createChundanHull } from './chundan';
+import { FramePacer } from './frame-pacer';
 import { Director } from './director';
 import * as THREE from 'three';
 import {KTX2Loader} from 'three/addons/loaders/KTX2Loader.js';
@@ -8,7 +9,7 @@ import { LOG_HALF_LENGTH, LOG_RADIUS, WATER_LEVEL } from './world';
 import { createScenery, type SceneQuality } from './scenery';
 import { paddlePose, waterHeight, STROKE_SECONDS, PADDLE_LEAN } from './rowing';
 
-type Options = { getRace: () => Race | null; playerId?: string; view: 'player' | 'broadcast'; followBoat?: () => string; cameraMode?: () => string; povPlayer?:()=>string;selectPlayer?:(id:string)=>void;serverNow?:()=>number;graphics?:()=>string;previewRoot?:HTMLElement;onFallback?: (reason: string) => void };
+type Options = { getRace: () => Race | null; playerId?: string; view: 'player' | 'broadcast'; followBoat?: () => string; cameraMode?: () => string; povPlayer?:()=>string;selectPlayer?:(id:string)=>void;serverNow?:()=>number;graphics?:()=>string;frameRate?:()=>number;previewRoot?:HTMLElement;onFallback?: (reason: string) => void };
 
 
 /** World metres match the simulation: +x is right, forward is -z. */
@@ -28,6 +29,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   let compressed: KTX2Loader | undefined;
   let observer: ResizeObserver | undefined;
   let previewTarget:THREE.WebGLRenderTarget|undefined,removePicking=()=>{},releaseShadows=()=>{};
+  const pacer=new FramePacer();
   let graphicsPreference=options.graphics?.()||'auto';
   const selectedPlayer=()=>options.povPlayer?.()||(options.view==='player'?options.playerId:'');
   const serverNow=()=>options.serverNow?.()??Date.now();
@@ -37,6 +39,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   let reduced = reducedQuery.matches;
   const mobile = matchMedia('(pointer: coarse)').matches || innerWidth < 760;
   let quality: SceneQuality = mobile ? 'medium' : 'high';
+  let frameFallback=false;
   let renderFrames = 0, costTotal = 0, slowWindows = 0, fastWindows = 0;
   let yaw = 0, pitch = 0, preview = 0, localStrokeAt = -Infinity;
   let predictionCount = 0, predictionUntil = 0;
@@ -242,13 +245,17 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
       p.y+=.012*sin(p.x*.65+p.z*.9+t*.7);world=p.xyz;vec4 v=viewMatrix*p;depth=-v.z;gl_Position=projectionMatrix*v;}`,
     fragmentShader: `precision highp float;
       varying vec3 world; varying float depth; uniform float time; uniform float still; uniform float fogNear; uniform float fogFar;
+      float hash(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
+      float ripple(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+1.),f.x),f.y);}
       void main(){float t=time*(1.0-still);
         // Crossed, low-amplitude ripples fade into the horizon instead of aliasing into stripes.
         float a=world.x*.82+world.z*1.12+t*.65;float b=world.x*1.63-world.z*.71-t*.43;
         float c=world.x*3.7+world.z*2.3+t*.92;
         float detail=1.-smoothstep(25.,110.,depth);
         float ca=cos(a+sin(b*.33)),cb=cos(b+sin(a*.27));
-        vec3 normal=normalize(vec3(.018*ca+.012*cb+.004*cos(c)*detail,1.,.024*ca-.011*cb+.003*sin(c)*detail));
+        vec2 uv=world.xz*1.8+vec2(t*.12,-t*.08);float n=ripple(uv);
+        vec2 broken=vec2(ripple(uv+vec2(.15,0.))-n,ripple(uv+vec2(0.,.15))-n);
+        vec3 normal=normalize(vec3(.008*ca+broken.x*.45*detail,1.,.008*cb+broken.y*.45*detail));
         vec3 eye=normalize(cameraPosition-world);float fresnel=.08+.78*pow(1.-max(dot(normal,eye),0.),4.);
         vec3 reflection=reflect(-eye,normal);
         vec3 reflected=mix(vec3(.40,.59,.56),vec3(.19,.46,.61),max(0.,reflection.y));
@@ -269,8 +276,8 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   water.rotation.x = -Math.PI / 2;
   const bankGround = new THREE.Group(); scene.add(bankGround);
   for (const sign of [-1, 1]) {
-    node(bankGround, box, sand, sign * (riverWidth/2+25), -.18, 0, 50, .45, 900);
-    node(bankGround, box, grass, sign * (riverWidth/2+26.5), .03, 0, 51, .6, 900);
+    node(bankGround, box, sand, sign * (riverWidth/2+100), -.18, 0, 200, .45, 900);
+    node(bankGround, box, grass, sign * (riverWidth/2+101.5), .03, 0, 201, .6, 900);
   }
   scenery = createScenery(scene, { geometry, material, wood, deck, trim }, options.view === 'broadcast', riverWidth);
   const dynamicRoot = new THREE.Group(); scene.add(dynamicRoot);
@@ -321,7 +328,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   });
   const bladeShape = new THREE.Shape(); bladeShape.moveTo(0,.25); bladeShape.bezierCurveTo(.08,.18,.15,-.03,.1,-.24); bladeShape.quadraticCurveTo(0,-.34,-.1,-.24); bladeShape.bezierCurveTo(-.15,-.03,-.08,.18,0,.25);
   const bladeGeo = geometry(new THREE.ExtrudeGeometry(bladeShape, { depth: .025, bevelEnabled: true, bevelThickness: .008, bevelSize: .012, bevelSegments: 1, curveSegments: 5 }));
-  const armA = new THREE.Vector3(), armB = new THREE.Vector3(), elbow = new THREE.Vector3();
+  const shoulders=[new THREE.Vector3(),new THREE.Vector3()],hands=[new THREE.Vector3(),new THREE.Vector3()],shaft=new THREE.Vector3();
   const bladePoint = new THREE.Vector3();
   const contactShade = new THREE.MeshBasicMaterial({color:'#241d15',map:softMask,transparent:true,opacity:.24,depthWrite:false}); materials.add(contactShade);
   const contactGeo = geometry(new THREE.CircleGeometry(1, 16));
@@ -365,9 +372,9 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
       node(root, contactGeo, contactShade, capacity===1?0:(i%2?1:-1)*.36, .513, crewSeatZ(i, capacity) + .13, .36, .11, 1).rotation.x = -Math.PI / 2;
       const person = new THREE.Group(); root.add(person);
       const paddle = new THREE.Group(); person.add(paddle);
-      node(paddle, cylinder, trim, 0, 0, 0, .024, 1.85, .024);
+      node(paddle, cylinder, trim, 0, -.23, 0, .018, 1.3, .018);
       const blade = node(paddle, bladeGeo, deck, 0, -.89, 0, 1, 1, 1); blade.rotation.y = .18;
-      node(paddle, sphere, trim, 0, .92, 0, .075, .025, .025);
+      node(paddle, sphere, trim, 0, .42, 0, .055, .018, .022);
       const splash = new THREE.Group(); person.add(splash);
       for (let j = 0; j < 5; j++) node(splash, sphere, white, 0, 0, 0, .04, .08, .04);
       splash.visible = false;
@@ -392,13 +399,13 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     logs.push({ mesh: log, id: -1, x: 0, distance: 0 });
   }
   // Dynamic crew and static obstacle buffers are separate; hidden sources aren't submitted.
-  function makeBatches(root: THREE.Group) {
+  function makeBatches(root: THREE.Group, sources?:THREE.Mesh[]) {
     const groups = new Map<string, THREE.Mesh[]>();
-    root.traverse(object => {
+    const collect=(object:THREE.Object3D)=>{
       if (!(object instanceof THREE.Mesh) || Array.isArray(object.material)) return;
-      const key=object.geometry.uuid+object.material.uuid, group=groups.get(key)??[];
+      const m=object.material as THREE.MeshStandardMaterial;const key=object.geometry.uuid+(sources?m.name+m.color.getHexString():m.uuid), group=groups.get(key)??[];
       group.push(object); groups.set(key,group);
-    });
+    };if(sources)sources.forEach(collect);else root.traverse(collect);
     const batches: {mesh:THREE.InstancedMesh;sources:THREE.Mesh[]}[]=[];
     for(const sources of groups.values()) {
       const mesh=new THREE.InstancedMesh(sources[0].geometry,sources[0].material,sources.length);
@@ -406,8 +413,8 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
       mesh.count=0;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mesh.frustumCulled=false;
       sources.forEach(source=>source.layers.set(1));scene.add(mesh);batches.push({mesh,sources});
     }
-    return { update(){
-      root.updateMatrixWorld(true);
+    return { update(updateMatrices=true){
+      if(updateMatrices)root.updateMatrixWorld(true);
       for(const {mesh,sources} of batches){
         let count=0;
         for(const source of sources){
@@ -420,7 +427,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     }, get count(){return batches.reduce((n,b)=>n+b.mesh.count,0);}, get capacity(){return batches.reduce((n,b)=>n+b.sources.length,0);} };
   }
   const dynamicBatches=makeBatches(dynamicRoot), logBatches=makeBatches(logRoot);
-  let logKey='';
+  let logKey='',distantBatches:ReturnType<typeof makeBatches>|undefined;
 
   let lastRound = -1, rosterKey = '', lastTime = performance.now(), fpsTime = lastTime, fpsFrames = 0;
   const director=new Director(),aim=new THREE.Vector3(),projected=new THREE.Vector3();
@@ -467,19 +474,17 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     if(player && options.getRace()!.boats[player.team].crewCount===1)crew.side=(own?(localSide||player.lastSide):player.lastSide)==='right'?1:-1;
     const age = (now - (own ? Math.max(crew.at, localStrokeAt) : crew.at)) / 1000;
     const stroke = paddlePose(age, own ? preview : 0);
-    crew.paddle.position.set(crew.side * .25, stroke.y, stroke.z);
+    crew.paddle.position.set(crew.side * .35, stroke.y, stroke.z+.03);
     // Feather the blade through recovery; its working face pushes water during the drive.
     crew.paddle.rotation.set(stroke.pitch, stroke.active && !stroke.drive ? Math.sin(Math.PI * age / STROKE_SECONDS) * .7 : 0, crew.side * PADDLE_LEAN);
     crew.paddle.updateMatrix();
     if(detailed){
-    const shoulders:THREE.Vector3[]=[], hands:THREE.Vector3[]=[];
     for (let i = 0; i < 2; i++) {
-      armA.set(i ? .22 : -.22, own ? 1.06 : 1.17, -.04);
-      armB.set(0, (i === (crew.side > 0 ? 1 : 0)) ? -.15 : .3, 0).applyMatrix4(crew.paddle.matrix);
-      elbow.copy(armA).lerp(armB,.52); elbow.y-=.13; elbow.x+=(i?1:-1)*.07;
-      shoulders.push(armA.clone());hands.push(armB.clone());
+      shoulders[i].set(i ? .17 : -.17, 1.05, -.015);
+      hands[i].set(0, (i === (crew.side > 0 ? 1 : 0)) ? -.10 : .40, 0).applyMatrix4(crew.paddle.matrix);
     }
-    crew.model?.pose(shoulders,hands);
+    shaft.set(0,1,0).applyQuaternion(crew.paddle.quaternion);
+    crew.model?.pose(shoulders,hands,shaft,crew.side);
     }
     bladePoint.set(0,-1.2,0).applyMatrix4(crew.paddle.matrix);
     if(own){element.dataset.strokePhase=stroke.drive?'drive':stroke.active?'recovery':'ready';element.dataset.bladeHeight=bladePoint.y.toFixed(3);}
@@ -492,8 +497,9 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   }
   function setPOV(cam:THREE.PerspectiveCamera,player:Player,race:Race){
     const boat=boats[player.team];
-    if(cam.fov!==72){cam.fov=72;cam.updateProjectionMatrix();}
-    cameraPoint.set(race.boats[player.team].crewCount===1?0:(player.side==='left'?-1:1)*.36,1.38,crewSeatZ(player.seat,race.boats[player.team].crewCount)+.035);
+    if(cam.fov!==78){cam.fov=78;cam.updateProjectionMatrix();}
+    // A slight aft eye offset keeps the near forearm out of the center of the broadcast.
+    cameraPoint.set(race.boats[player.team].crewCount===1?0:(player.side==='left'?-1:1)*.36,1.32,crewSeatZ(player.seat,race.boats[player.team].crewCount)+.24);
     boat.root.updateMatrixWorld(true);cam.position.copy(boat.root.localToWorld(cameraPoint));boat.root.getWorldQuaternion(boatQuaternion);
     lookEuler.set(pitch-.13,yaw,0);lookQuaternion.setFromEuler(lookEuler);cam.quaternion.copy(boatQuaternion).multiply(lookQuaternion);
   }
@@ -553,14 +559,15 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     if (disposed || failed || document.hidden) return;
     frame = requestAnimationFrame(render);
     const elapsed = now - lastTime;
-    // Follow a 60 Hz display directly; a 40 Hz threshold skips every other frame on it.
-    const interval = reduced ? 1000 / 30 : quality === 'low' ? 1000 / 30 : 1000 / 60;
-    if (elapsed < interval - 1) return;
+    const requested=options.frameRate?.()===90?90:60;
+    const target=reduced||frameFallback?30:requested;
+    if(!pacer.due(now,target))return;
+    element.dataset.targetFps=String(target);
     lastTime = now;
     const costStart = performance.now();
     const race = options.getRace();
     if (!race) { renderer!.render(scene, camera); return; }
-    const preference=options.graphics?.()||'auto';if(preference!==graphicsPreference){graphicsPreference=preference;quality=preference==='performance'?'medium':'high';slowWindows=fastWindows=0;resize();}
+    const preference=options.graphics?.()||'auto';if(preference!==graphicsPreference){graphicsPreference=preference;frameFallback=false;quality=preference==='performance'?'medium':'high';slowWindows=fastWindows=0;resize();}
     const reset = race.round !== lastRound;
     if (reset) { localStrokeAt = -Infinity; predictionCount = 0; predictionUntil = 0; preview = 0; }
     syncRoster(race, now);
@@ -629,7 +636,8 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
     waterMaterial.uniforms.still.value = reduced ? 1 : 0;
     const nextLogKey=logs.filter(log=>log.mesh.visible).map(log=>`${log.id}/${log.x}/${log.distance}/${log.mesh.rotation.y}`).join(',');
     if(nextLogKey!==logKey){logBatches.update();logKey=nextLogKey;}
-    dynamicBatches.update();
+    dynamicBatches.update();distantBatches?.update(false);
+    element.dataset.distantInstances=String(distantBatches?.count||0);
     waterMaterial.uniforms.fogNear.value=(scene.fog as THREE.Fog).near;
     waterMaterial.uniforms.fogFar.value=(scene.fog as THREE.Fog).far;
     sunlight.shadow.intensity=quality==='high'?.65:0;
@@ -649,9 +657,9 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
       element.dataset.triangles = String(renderer!.info.render.triangles);
       const cost=costTotal/Math.max(1,fpsFrames);
       element.dataset.renderCost=cost.toFixed(2);
-      const targetFps = reduced || quality === 'low' ? 30 : 60;
-      slowWindows=cost>14 || (!reduced && fps<targetFps*.72) ? slowWindows+1 : 0;
-      fastWindows=cost<6 && fps>targetFps*.9 ? fastWindows+1 : 0;
+      const targetFps=Math.min(target,pacer.refresh);
+      slowWindows=cost>1000/targetFps*.85 || (!reduced && fps<targetFps*.72) ? slowWindows+1 : 0;
+      fastWindows=cost<1000/Math.min(requested,pacer.refresh)*.36 && fps>targetFps*.9 ? fastWindows+1 : 0;
       const levels:SceneQuality[]=['low','medium','high'];const level=levels.indexOf(quality);
       if(slowWindows>=2 && level>0){quality=levels[level-1];slowWindows=0;fastWindows=0;resize();}
       else if(fastWindows>=5 && level<(mobile?1:2)){quality=levels[level+1];fastWindows=0;resize();}
@@ -661,7 +669,7 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
   }
   function onVisibility(){
     cancelAnimationFrame(frame);
-    if(!document.hidden && !disposed && !failed){lastTime=fpsTime=performance.now();fpsFrames=0;costTotal=0;slowWindows=fastWindows=0;frame=requestAnimationFrame(render);}
+    if(!document.hidden && !disposed && !failed){pacer.reset();lastTime=fpsTime=performance.now();fpsFrames=0;costTotal=0;slowWindows=fastWindows=0;frame=requestAnimationFrame(render);}
   }
   void loadCrew().then(async source=>{
     if(disposed||failed)return;
@@ -671,7 +679,8 @@ export function mountRaceScene(element: HTMLElement, options: Options) {
       crew.model=createCrew(source,initial.config.find(c=>c.id===team)!.color,own);crewModels.push(crew.model);crew.root.add(crew.model.root);
       pose(crew,options.getRace()?.players.find(p=>p.id===crew.playerId),performance.now());
     }
-    element.dataset.boatStyle='chundan-vallam';element.dataset.crewAsset='anatomical-rig';await Promise.all([...surfaceLoads,scenery?.ready]);if(disposed||failed)return;await renderer!.compileAsync(scene,camera);if(disposed||failed)return;if(previewTarget){renderer!.setRenderTarget(previewTarget);const warming=renderer!.compileAsync(scene,previewCamera);renderer!.setRenderTarget(null);await warming;}if(!disposed&&!failed){lastTime=fpsTime=performance.now();fpsFrames=costTotal=slowWindows=fastWindows=0;quality=graphicsPreference==='performance'||mobile?'medium':'high';resize();resolveReady();}
+    distantBatches=makeBatches(dynamicRoot,crewModels.flatMap(m=>m.distantMeshes));
+    element.dataset.boatStyle='chundan-vallam';element.dataset.crewAsset='anatomical-rig';await Promise.all([...surfaceLoads,scenery?.ready]);if(disposed||failed)return;await renderer!.compileAsync(scene,camera);if(disposed||failed)return;if(previewTarget){renderer!.setRenderTarget(previewTarget);const warming=renderer!.compileAsync(scene,previewCamera);renderer!.setRenderTarget(null);await warming;}if(!disposed&&!failed){lastTime=fpsTime=performance.now();fpsFrames=costTotal=slowWindows=fastWindows=0;frameFallback=false;quality=graphicsPreference==='performance'||mobile?'medium':'high';resize();resolveReady();}
   }).catch(error=>{console.error('Crew asset:',error);useFallback('Crew assets could not load. Showing the live river map; reload to retry 3D.');});
   document.addEventListener('visibilitychange',onVisibility);
   if(!document.hidden) frame = requestAnimationFrame(render);

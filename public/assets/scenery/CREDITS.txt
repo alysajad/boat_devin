@@ -1,4 +1,4 @@
 Island Tree 01 — Poly Haven, CC0 1.0.
 Source: https://polyhaven.com/a/island_tree_01
-Original mesh simplified and textures resized for mobile by scripts/build-tree.mjs.
+Original mesh simplified; 1K photographic textures and leaf alpha preserved for broadcast by scripts/build-tree.mjs.
 License: https://creativecommons.org/publicdomain/zero/1.0/

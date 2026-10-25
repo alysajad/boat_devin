@@ -60,9 +60,25 @@ test('Chundan seats a full 25-person crew and keeps the last rower POV usable',a
    const session=await api('join',{code:room.code,name:`Crew ${i}`,team:'boat-1'}),client=new DeepstreamClient(base.replace(/^http/,'ws')+'/deepstream');client.on('error',()=>{});await client.login({username:`race_v3-${room.code}/${session.id}`,token:session.token});room.actors.push({session,client});
   }
   for(const {session}of room.actors){await api('command',{action:'controller',mode:'swipe'},session);await api('command',{action:'ready',ready:true},session);}
-  await page.locator('[data-action=start]').click();await expect(page.locator('#phase-label')).toHaveText('RACE IS ON',{timeout:12000});await expect(page.locator('#renderer-notice')).toBeHidden({timeout:30000});await expect(page.locator('.rower-label')).toHaveCount(26);
+  await page.locator('[data-action=start]').click();await expect(page.locator('#phase-label')).toHaveText('RACE IS ON',{timeout:12000});await expect(page.locator('#renderer-notice')).toBeHidden({timeout:30000});await expect(page.locator('.rower-label')).toHaveCount(26);await expect.poll(async()=>Number(await page.locator('#race-river').getAttribute('data-distant-instances'))).toBeGreaterThan(0);
   await page.locator('#follow-camera').selectOption('boat-1');await page.locator('#camera-shot').selectOption('side');await page.waitForTimeout(1500);await page.screenshot({path:'artifacts/chundan-full-crew.png'});
   const last=room.actors.at(-1).session;await page.locator('#pov-rower').selectOption(last.id);await expect(page.locator('#race-river')).toHaveAttribute('data-camera-player',last.id);await expect(page.locator('#director-title')).toContainText('Crew 25');await page.screenshot({path:'artifacts/chundan-last-seat.png'});
   await page.getByRole('button',{name:'Back to broadcast',exact:true}).click();await expect(page.locator('#pov-rower')).toHaveValue('');
+ }finally{room.close();}
+});
+
+test('broadcast crew calls follow accepted strokes, coalesce teammates, mute, and expose the 90 FPS target',async({page})=>{
+ const room=await setup(page);
+ try{
+  const sound=page.locator('[data-action=director-sound]');await sound.click();await expect(sound).toHaveAttribute('data-ready','true');
+  await page.locator('#follow-camera').selectOption('boat-1');await page.locator('#frame-rate').selectOption('90');await expect(page.locator('#race-river')).toHaveAttribute('data-target-fps','90');
+  await page.locator('[data-action=start]').click();await expect(page.locator('#phase-label')).toHaveText('RACE IS ON',{timeout:12000});
+  const stroke=(actor:any,seq:number)=>actor.client.event.emit(`race_v3-${room.code}/stroke/${actor.session.id}`,{seq,round:1,mode:'swipe',at:Date.now()});
+  stroke(room.actors[0],1);stroke(room.actors[1],1);await expect(sound).toHaveAttribute('data-calls','1');
+  stroke(room.actors[0],1);await page.waitForTimeout(350);await expect(sound).toHaveAttribute('data-calls','1');
+  await page.locator('#pov-rower').selectOption(room.actors[0].session.id);await page.waitForTimeout(400);await page.screenshot({path:'artifacts/realism-pov-ready.png'});
+  stroke(room.actors[0],2);await expect(sound).toHaveAttribute('data-calls','2');await page.screenshot({path:'artifacts/realism-pov-row.png'});
+  await sound.click();await expect(sound).toHaveAttribute('aria-label','Unmute rowing sound');await expect(sound).toHaveAttribute('data-voices','0');await page.waitForTimeout(750);stroke(room.actors[0],3);await page.waitForTimeout(400);await expect(sound).toHaveAttribute('data-calls','2');
+  await page.getByRole('button',{name:'Side camera preview',exact:true}).click();await page.waitForTimeout(1200);await page.screenshot({path:'artifacts/realism-river.png'});
  }finally{room.close();}
 });

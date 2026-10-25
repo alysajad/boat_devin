@@ -18,6 +18,7 @@ export async function build(watch = false) {
   }
   notices.push('Photographic wood and shore materials: Poly Haven, CC0 1.0. See /assets/river/CREDITS.txt for sources.\n');
   notices.push('Anatomical rowers: MakeHuman Community, CC0. See /assets/crew/CREDITS.txt. Island Tree 01: Poly Haven, CC0. See /assets/scenery/CREDITS.txt.\n');
+  notices.push('Crew call: Men Shouting Hey by Jace, Freesound, CC0. See /assets/audio/CREDITS.txt.\n');
   await writeFile('dist/CREDITS.txt', notices.join('\n'));
   const ctx = await esbuild.context({ entryPoints: ['app/main.ts'], bundle: true, outdir: 'dist', entryNames: 'app', chunkNames: 'chunks/[name]-[hash]', splitting: true, metafile: true, format: 'esm', target: 'es2022', sourcemap: true, minify: !watch, define: { global: 'window' }, inject: ['scripts/buffer-shim.js'], loader: { '.css': 'css', '.woff': 'file', '.woff2': 'file' }, plugins: [{ name: 'upstream-info-css', setup(b) { b.onLoad({ filter: /src\/info\.css$/ }, async args => ({ contents: await (await import('node:fs/promises')).readFile(args.path, 'utf8'), loader: 'text' })); } }], logLevel: 'info' });
   if (watch) await ctx.watch(); else { const result = await ctx.rebuild(); await writeFile('dist/build-meta.json', JSON.stringify(result.metafile, null, 2)); await ctx.dispose(); }

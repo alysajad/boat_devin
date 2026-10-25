@@ -1,0 +1,92 @@
+(node:108303) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/sajad-hussain/Desktop/devin/game-tests/assets.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/sajad-hussain/Desktop/devin/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ both rower LODs retain UVs for the licensed skin texture (3.754428ms)
+✔ tree foliage keeps cutout transparency and a bounded cluster mesh (2.574613ms)
+(node:108304) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/sajad-hussain/Desktop/devin/game-tests/authority.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/sajad-hussain/Desktop/devin/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ actual participant limits, automatic growth, frozen crews and late arrivals (82.485131ms)
+✔ mode, clock bounds, round, cadence and sequence validation; pause and reconnect (38.557561ms)
+✔ solo and uneven crews share maximum thrust; admin force scales propulsion (54.298739ms)
+✔ coordination uses distinct teammates in 300 ms, decays over two seconds, solo gets full credit (31.113877ms)
+✔ both race formats, authoritative close crossings, ties and settings bounds (34.581686ms)
+✔ controllers receive throttled compact status, broadcasts get detailed snapshots (14.274826ms)
+✔ the first crossing freezes the race; remaining boats rank by progress, not projected crossing time (49.302671ms)
+✔ disconnect and explicit leave release slots, revoke sessions and cannot resurrect through a late heartbeat (19.088312ms)
+✔ disconnect during a race removes the rower but freezes hull, seat positions and normalization (17.074863ms)
+✔ only accepted strokes emit immediate private and broadcast feedback with authoritative time (30.952484ms)
+✔ bounded event timestamps preserve 700 ms cadence through compressed network arrival gaps (17.097235ms)
+(node:108311) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/sajad-hussain/Desktop/devin/game-tests/chundan.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/sajad-hussain/Desktop/devin/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ Chundan hull has a narrow bow, raised stern and finite closed surface (330.880008ms)
+✔ one to 25 rowers fit in paired seats ahead of the raised tail (9.285531ms)
+(node:108316) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/sajad-hussain/Desktop/devin/game-tests/controls.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/sajad-hussain/Desktop/devin/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a downward pull fires once at 48px, ignores other fingers and resets on release (2.082399ms)
+✔ canceling an unfinished gesture cannot produce a late stroke (0.377468ms)
+✔ look angles stay within a comfortable seated range (0.238278ms)
+✔ sideways swipes work in both directions and fire only once per touch (0.176582ms)
+(node:108317) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/sajad-hussain/Desktop/devin/game-tests/director.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/sajad-hussain/Desktop/devin/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ overview first, six-second shots, close-battle focus, four-second finish minimum, manual override (2.549155ms)
+(node:108323) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/sajad-hussain/Desktop/devin/game-tests/engine.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/sajad-hussain/Desktop/devin/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ lobby enforces equal crews, minimum size, connections, and readiness (3.376378ms)
+✔ countdown, fixed race duration, draw, and rematch reset (599.018968ms)
+✔ duplicate, stale, rate-limited and non-player strokes are ignored (5.210451ms)
+✔ balanced paddles go straight, one side turns, crew size normalizes force (37.118008ms)
+✔ logs and banks slow boats without repeatedly counting the same collision (45.608256ms)
+✔ malformed presence records cannot join the game (2.873865ms)
+✔ the visible bow contacts a log before the centre reaches it; nearby clear water does not collide (49.767514ms)
+✔ paddle torque turns continuously and identical elapsed time gives identical movement (82.736183ms)
+✔ the race never moves past its final fractional tick and ignores invalid elapsed time (4.500018ms)
+✔ stroke force builds during water contact, stops in recovery, and cannot be spammed (23.920714ms)
+✔ drag removes energy faster at higher speed and idle water cannot propel a boat (7.140875ms)
+(node:108329) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/sajad-hussain/Desktop/devin/game-tests/frame-pacer.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/sajad-hussain/Desktop/devin/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ 90 FPS target on a 60 Hz display preserves fractional deadlines (6.172768ms)
+✔ 90 FPS target on a 90 Hz display preserves fractional deadlines (1.120033ms)
+✔ 90 FPS target on a 120 Hz display preserves fractional deadlines (1.998642ms)
+✔ 90 FPS target on a 144 Hz display preserves fractional deadlines (2.556519ms)
+✔ 60 FPS target on a 120 Hz display preserves fractional deadlines (0.589306ms)
+✔ 30 FPS target on a 60 Hz display preserves fractional deadlines (0.399671ms)
+✔ a background interruption resumes without rendering queued frames (0.285926ms)
+(node:108333) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/sajad-hussain/Desktop/devin/game-tests/motion.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/sajad-hussain/Desktop/devin/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ rest, jitter, shocks and incomplete gestures do not row (5.880869ms)
+✔ complete cycles work across sampling rates and gentle thresholds (1.31078ms)
+✔ cancellation, gaps, hysteresis and 700 ms limit prevent queued or extra strokes (0.834847ms)
+✔ calibration, sensor bias, gravity fallback, rowing with rotation, suspension and recalibration (162.937036ms)
+✔ continuous sweeps accept either starting side without pauses, at 20–100 Hz (26.557755ms)
+✔ calibration learns gentle sideways, forward and rotational rowing in either direction (563.132431ms)
+(node:108342) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/sajad-hussain/Desktop/devin/game-tests/world.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/sajad-hussain/Desktop/devin/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ render-space heading rotates the bow in the same direction as positive steering (1.51822ms)
+✔ collision test rejects separated polygons, includes touching and rotated contact (4.238346ms)
+✔ lane collisions constrain every rotated hull vertex, not just its centre (3.841141ms)
+✔ paddle blade is submerged through the drive and lifted for the return (0.648167ms)
+ℹ tests 48
+ℹ suites 0
+ℹ pass 48
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1412.325817
