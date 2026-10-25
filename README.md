@@ -2,7 +2,7 @@
 
 A real-time multiplayer Kerala boat-racing game where phones become paddles and teamwork steers each crew to victory.
 
-Built for the **DevDay Exchange Community Hackathon: Kochi**, held on 24–25 October 2026 at JAIN University, Kochi.
+Built for the **Devin Hacks Community Hackathon: Kochi**, held on 24–25 October 2026 at JAIN University, Kochi.
 
 **[Event and registration on Luma](https://luma.com/z10nz8gp)** · **[Project rules](RULES.md)** · **[Agent instructions](AGENTS.md)**
 
